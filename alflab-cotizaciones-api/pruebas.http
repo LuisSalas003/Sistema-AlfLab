@@ -1,0 +1,76 @@
+### 1. Crear usuario de prueba
+POST http://localhost:3001/api/auth/registro
+Content-Type: application/json
+
+{
+  "email": "maestro@alflab.com",
+  "password": "Password123!"
+}
+
+### 2. Obtener Token (Login)
+POST http://localhost:3001/api/auth/login
+Content-Type: application/json
+
+{
+  "usuario": "maestro@alflab.com",
+  "password": "Password123!"
+}
+
+### 3. Obtener Cotizaciones
+GET http://localhost:3001/api/cotizaciones
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub21icmVVc3VhcmlvIjoibWFlc3Ryb0BhbGZsYWIuY29tIiwicm9sIjoiQURNSU5JU1RSQURPUiIsInN1YiI6IjdjZjEwNzNmLTFhMGEtNDFkZS1iNDJlLTViNjUyNmEyN2I3OCIsImlhdCI6MTc3ODA3OTUzMSwiZXhwIjoxNzc4MDgzMTMxfQ.M5JaYDtEZh2iIDnELBBCdgFtYu8krbk0LqE8BHZ3rlA
+
+### 4. Crear una Cotización nueva
+POST http://localhost:3001/api/cotizaciones
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub21icmVVc3VhcmlvIjoibWFlc3Ryb0BhbGZsYWIuY29tIiwicm9sIjoiQURNSU5JU1RSQURPUiIsInN1YiI6IjdjZjEwNzNmLTFhMGEtNDFkZS1iNDJlLTViNjUyNmEyN2I3OCIsImlhdCI6MTc3ODA3OTUzMSwiZXhwIjoxNzc4MDgzMTMxfQ.M5JaYDtEZh2iIDnELBBCdgFtYu8krbk0LqE8BHZ3rlA
+
+{
+  "clienteId": "CLI-TEST-001",
+  "total": 20000.00,
+  "items": [
+    {
+      "descripcion": "Desarrollo de módulo de seguridad",
+      "cantidad": 1,
+      "precioUnitario": 15000.00
+    },
+    {
+      "descripcion": "Configuración de servidor Docker",
+      "cantidad": 1,
+      "precioUnitario": 5000.00
+    }
+  ],
+  "fechaVencimiento": "2026-06-01"
+}
+
+### Prueba de Vulnerabilidad (Para revisión del maestro)
+POST http://localhost:3001/api/cotizaciones
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub21icmVVc3VhcmlvIjoibWFlc3Ryb0BhbGZsYWIuY29tIiwicm9sIjoiQURNSU5JU1RSQURPUiIsInN1YiI6IjdjZjEwNzNmLTFhMGEtNDFkZS1iNDJlLTViNjUyNmEyN2I3OCIsImlhdCI6MTc3ODMwMjUyNCwiZXhwIjoxNzc4MzA2MTI0fQ.DaG_qXzp0YDTTRvk0D9amSiZ406XXEl3S2nK88K-UoI
+
+{
+  "clienteId": "CLI-TEST-001",
+  "total": "ESTO_ES_UN_ATAQUE_DE_INYECCION", 
+  "items": [
+    {
+      "descripcion": "Desarrollo de módulo de seguridad",
+      "cantidad": 1,
+      "precioUnitario": 15000.00
+    }
+  ],
+  "fechaVencimiento": "2026-06-01"
+}
+
+### Prueba de Vulnerabilidad 2 (Ataque de Token Falso)
+GET http://localhost:3001/api/cotizaciones
+# Fíjate que el token es pura basura inventada
+Authorization: Bearer soy.un.hacker.intentando.entrar
+
+### Prueba de Fuerza Bruta (Login)
+POST http://localhost:3001/api/auth/login
+Content-Type: application/json
+
+{
+  "usuario": "maestro@alflab.com",
+  "password": "HackerPassword123" 
+}

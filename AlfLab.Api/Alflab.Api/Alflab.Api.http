@@ -1,0 +1,67 @@
+@HostAddress = http://127.0.0.1:5004
+
+### ==========================================
+### DEMO 0: CREAR EL USUARIO ADMIN (Preparación)
+### ==========================================
+# Ejecuta este primero para que el usuario exista en la BD.
+
+POST {{HostAddress}}/api/auth/registrar
+Content-Type: application/json
+
+{
+  "nombreCompleto": "Administrador AlfLab",
+  "correo": "admin@alflab.com",
+  "password": "TuPasswordReal123"
+}
+
+### ==========================================
+### DEMO 1: ATAQUE DE FUERZA BRUTA
+### ==========================================
+# Ejecuta este bloque 4 veces seguidas para que tu maestro 
+# vea cómo al cuarto intento la API te bloquea por 15 minutos.
+
+POST {{HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "correo": "admin@alflab.com",
+  "password": "HackerPassword123"
+}
+
+### ==========================================
+### DEMO 2: LOGIN EXITOSO (Para obtener el Token)
+### ==========================================
+# Úsalo con la contraseña correcta para obtener tu token.
+
+POST {{HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "correo": "admin@alflab.com",
+  "password": "TuPasswordReal123"
+}
+
+### ==========================================
+### DEMO 3: INYECCIÓN DE BASURA (Cámara de Seguridad)
+### ==========================================
+# Ejecuta esto para demostrar que el sistema no colapsa 
+# y que el ExceptionMiddleware atrapa el error 400.
+# Observa tu consola de VS Code para ver el log en amarillo.
+
+POST {{HostAddress}}/api/auth/registrar
+Content-Type: application/json
+
+{
+  "nombreCompleto": "Intruso",
+  "password": "123"
+}
+
+### ==========================================
+### DEMO 4: PRUEBA ANTI-CLONACIÓN (Requiere Token)
+### ==========================================
+# Pega tu token de la Demo 2 aquí abajo (después de Bearer).
+# Si saboteaste la IP en el código, esto debería fallar.
+@token = PEGA_TU_TOKEN_AQUI_SIN_BORRAR_EL_BEARER
+
+GET {{HostAddress}}/api/usuarios
+Authorization: Bearer {{token}}

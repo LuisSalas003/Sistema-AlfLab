@@ -1,0 +1,12 @@
+FROM mysql:8.0
+
+# Etiquetas de mantenimiento (como mostró tu maestro)
+LABEL maintainer="AlfLab-Team"
+LABEL description="Custom MySQL for AlfLab Architecture"
+
+# Copiamos nuestro script de inicialización
+# Docker ejecutará automáticamente cualquier archivo .sql dentro de esta carpeta al arrancar
+COPY ./init.sql /docker-entrypoint-initdb.d/
+
+# Exponemos el puerto estándar de MySQL
+EXPOSE 3306
