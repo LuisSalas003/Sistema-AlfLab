@@ -17,28 +17,29 @@ dotenv.config({ path: join(__dirname, '../../.env') });
   imports: [
     ScheduleModule.forRoot(),
     ConfigModule.forRoot({ isGlobal: true }), 
-    TypeOrmModule.forRoot({
+   TypeOrmModule.forRoot({
       type: 'mysql',
       // EL SECRETO DE CQRS: Le enseñamos a TypeORM quién es quién
       replication: {
         master: {
-          host: process.env.DB_HOST || 'db-master',
-          port: 3306, // 👈 EL PUERTO MÁGICO DEFINITIVO
+          host: process.env.DB_HOST || 'alflab_db_master', // Directo a tu Master
+          port: 3306, 
           username: 'root',
           password: process.env.DB_PASSWORD,
           database: process.env.DB_NAME,
         },
         slaves: [
           {
-            host: process.env.DB_HOST === 'db-master' ? 'db-replica' : '127.0.0.1', 
-            port: 3306, // 👈 AQUÍ TAMBIÉN, SOLO 3306
+            host: process.env.DB_REPLICA_HOST || 'alflab_db_replica', // Directo a tu Réplica
+            port: 3306, 
             username: 'root', 
             password: process.env.DB_PASSWORD,
             database: process.env.DB_NAME,
           }
         ]
       },
-      entities: [__dirname + '/**/*.orm-entity{.ts,.js}'],
+      // 👈 EL ARREGLO: Le decimos que busque CUALQUIER archivo que diga 'entity'
+      entities: ['dist/**/*.js'],
       autoLoadEntities: true,
       synchronize: true, 
     }),

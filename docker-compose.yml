@@ -53,6 +53,7 @@ services:
       - DB_PASSWORD=${DB_MASTER_ROOT_PASSWORD:-Root_Profe_2026}
       - DB_NAME=${DB_MASTER_DATABASE:-alflab_cotizaciones}
       - JWT_SECRET=${JWT_SECRET:-Firma_Local_De_Prueba_2026}
+      - TZ=America/Mexico_City
     depends_on:
       - db-master
 
