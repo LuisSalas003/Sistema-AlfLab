@@ -11,6 +11,7 @@ using AlfLab.Api.Infrastructure.Contexts;
 using AlfLab.Api.Infrastructure.Repositories;
 using AlfLab.Api.Application.Interfaces;
 using AlfLab.Api.Application.Services;
+using AlfLab.Api.Security; // Para el robot de mantenimiento y el monitor de réplica
 using AlfLab.Api.Middlewares;  
 using Microsoft.AspNetCore.RateLimiting;
 using DotNetEnv;
@@ -52,6 +53,8 @@ builder.Services.AddScoped<IProductoRepository, ProductoRepository>();
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>(); 
 builder.Services.AddHostedService<RobotMantenimientoService>(); // Registramos el robot de mantenimiento como servicio de fondo
+builder.Services.AddSingleton<EstadoSistema>(); // Estado compartido para el monitor de réplica
+builder.Services.AddHostedService<MonitorReplicaService>(); // Registramos el monitor de réplica como servicio de fondo
 
 // 4. AUTENTICACIÓN JWT (El Candado)
 var jwtKey = Environment.GetEnvironmentVariable("JWT_SECRET") ?? "EstaEsUnaLlaveDeRespaldoPorSiFallaElEnv123!";

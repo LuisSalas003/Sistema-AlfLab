@@ -15,6 +15,7 @@ import { SecurityLoggerService } from './application/services/security-logger.se
 import { AuthController } from './infrastructure/http/controllers/auth.controller'; 
 import { AuthService } from './application/services/auth.service'; 
 import { CotizacionesCronService } from './application/services/cotizaciones-cron.service'; // <-- Tu único servicio de fondo
+import { SeguridadModule } from '../seguridad/seguridad.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { CotizacionesCronService } from './application/services/cotizaciones-cro
         signOptions: { expiresIn: '1h' },
       }),
     }),
+    SeguridadModule, // <-- Importamos el módulo de seguridad
   ],
   controllers: [
     CotizacionesController,

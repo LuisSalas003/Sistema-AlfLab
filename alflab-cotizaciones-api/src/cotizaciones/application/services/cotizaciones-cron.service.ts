@@ -3,6 +3,8 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CotizacionOrmEntity } from '../../infrastructure/database/entities/cotizacion.orm-entity';
+// 👇 1. Importamos el Vigía (Verifica que los '../' sean correctos hacia tu carpeta de seguridad)
+import { ReplicaMonitorService } from '../../../seguridad/replica-monitor.service';
 
 @Injectable()
 export class CotizacionesCronService {
@@ -11,27 +13,47 @@ export class CotizacionesCronService {
   constructor(
     @InjectRepository(CotizacionOrmEntity)
     private readonly cotizacionRepo: Repository<CotizacionOrmEntity>,
+    // 👇 2. Inyectamos el Vigía en el constructor
+    private readonly monitor: ReplicaMonitorService,
   ) {}
 
-  // 🤖 TAREA 1: Simulador de facturación (El que acabamos de hacer)
+  // 🤖 TAREA 1: Simulador de facturación
   @Cron(CronExpression.EVERY_MINUTE)
   async procesarFacturasAutomaticas() {
     this.logger.debug('🤖 Iniciando simulación de facturación...');
-    const cotizacionesPendientes = await this.cotizacionRepo.find({ where: { estado: 'BORRADOR' } });
+    
+    // 👇 3. EL CANDADO: Protege la facturación
+    if (!this.monitor.isReplicaActive) {
+      this.logger.warn('⏳ Facturación pausada: Esperando a que la base de datos se recupere.');
+      return; 
+    }
 
-    if (cotizacionesPendientes.length === 0) return;
+    try {
+      const cotizacionesPendientes = await this.cotizacionRepo.find({ where: { estado: 'BORRADOR' } });
 
-    for (const cotizacion of cotizacionesPendientes) {
-      cotizacion.estado = 'FACTURADA'; 
-      await this.cotizacionRepo.save(cotizacion);
-      this.logger.log(`✅ Cotización ${cotizacion.folio || cotizacion.id} facturada.`);
+      if (cotizacionesPendientes.length === 0) return;
+
+      for (const cotizacion of cotizacionesPendientes) {
+        cotizacion.estado = 'FACTURADA'; 
+        await this.cotizacionRepo.save(cotizacion);
+        this.logger.log(`✅ Cotización ${cotizacion.folio || cotizacion.id} facturada.`);
+      }
+    } catch (error: any) {
+      this.logger.error(`Error en facturación: ${error.message}`);
     }
   }
 
-  // 🧹 TAREA 2: El limpiador que ya tenías (Ajusta la lógica a lo que tenías programado)
-  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT) // O el tiempo que le tuvieras asignado
+  // 🧹 TAREA 2: El limpiador
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT) 
   async limpiarCotizacionesViejas() {
     this.logger.debug('🧹 Ejecutando limpieza de cotizaciones antiguas...');
+
+    // 👇 4. EL CANDADO: Protege la limpieza también
+    if (!this.monitor.isReplicaActive) {
+      this.logger.warn('⏳ Limpieza pausada: Esperando a que la base de datos se recupere.');
+      return; 
+    }
+
     // Pega aquí la lógica que tenías en tu LimpiadorCotizacionesService
   }
 }

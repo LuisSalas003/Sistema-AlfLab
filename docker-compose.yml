@@ -6,14 +6,16 @@ services:
   # ==========================================
   db-master:
     build:
-      context: .
+      context: ./alflab-cotizaciones-api # 👇 Cambiado: ahora apunta hacia la carpeta de Nest
       dockerfile: Dockerfile.db
     container_name: alflab_db_master
     restart: always
+    env_file:             # 👈 AÑADIDO: Inyecta variables globales
+      - .env
     command: --server-id=1 --log-bin=mysql-bin
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_MASTER_ROOT_PASSWORD:-Root_Profe_2026} # <-- Actualizado
-      MYSQL_DATABASE: ${DB_MASTER_DATABASE:-alflab_cotizaciones}           # <-- Actualizado
+      MYSQL_ROOT_PASSWORD: ${DB_MASTER_ROOT_PASSWORD:-Root_Profe_2026}
+      MYSQL_DATABASE: ${DB_MASTER_DATABASE:-alflab_cotizaciones}
     ports:
       - "3309:3306"
     volumes:
@@ -23,6 +25,8 @@ services:
     image: mysql:8.0
     container_name: alflab_db_replica
     restart: always
+    env_file:             # 👈 AÑADIDO: Inyecta variables globales
+      - .env
     command: --server-id=2 --read-only=1
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-Root_Profe_2026}
@@ -34,18 +38,20 @@ services:
 
   api-cotizaciones:
     build:
-      context: .
+      context: ./alflab-cotizaciones-api # 👇 Cambiado: ahora apunta hacia la carpeta de Nest
       dockerfile: Dockerfile
     container_name: alflab_api_node
     restart: always
+    env_file:             # 👈 AÑADIDO: Inyecta variables globales
+      - .env
     ports:
       - "3000:3000"
     environment:
       - DB_HOST=db-master
       - DB_PORT=3306
       - DB_USER=root
-      - DB_PASSWORD=${DB_MASTER_ROOT_PASSWORD:-Root_Profe_2026} # <-- Le pasamos la contraseña real
-      - DB_NAME=${DB_MASTER_DATABASE:-alflab_cotizaciones}          # <-- Le pasamos la BD real
+      - DB_PASSWORD=${DB_MASTER_ROOT_PASSWORD:-Root_Profe_2026}
+      - DB_NAME=${DB_MASTER_DATABASE:-alflab_cotizaciones}
       - JWT_SECRET=${JWT_SECRET:-Firma_Local_De_Prueba_2026}
     depends_on:
       - db-master
@@ -57,6 +63,8 @@ services:
     image: mysql:8.0
     container_name: alflab_db_dotnet
     restart: always
+    env_file:             # 👈 AÑADIDO: Inyecta variables globales
+      - .env
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root}
       MYSQL_DATABASE: alflab_principal
@@ -67,18 +75,19 @@ services:
 
   api-principal:
     build:
-      context: ../AlfLab.Api
+      context: ./AlfLab.Api # 👇 Cambiado: quitamos los ".." porque ya estamos en la raíz, solo bajamos a la carpeta de .NET
       dockerfile: Dockerfile
     container_name: alflab_api_dotnet
     restart: always
+    env_file:             # 👈 AÑADIDO: Inyecta variables globales
+      - .env
     ports:
       - "5000:80"
     environment:
-      # Obligamos a .NET a correr en modo desarrollo
-      - ASPNETCORE_ENVIRONMENT="Development"
-      # Protegemos la cadena con comillas para que Docker no la rompa
-      - ConnectionStrings__DefaultConnection="Server=db-alflab-dotnet;Database=alflab_principal;Uid=root;Pwd=${DB_PASSWORD:-SuperPasswordPro_2026};"
-      # Le pasamos la llave para que pueda fabricar los Tokens
+      # 👇 Sin comillas
+      - ASPNETCORE_ENVIRONMENT=Development
+      # 👇 Sin comillas al inicio ni al final
+      - ConnectionStrings__DefaultConnection=Server=db-alflab-dotnet;Database=alflab_principal;Uid=root;Pwd=${DB_PASSWORD:-SuperPasswordPro_2026};
       - JWT_SECRET=${JWT_SECRET:-EstaEsUnaLlaveDeRespaldoPorSiFallaElEnv123!}
     depends_on:
       - db-alflab-dotnet
