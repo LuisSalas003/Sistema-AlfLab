@@ -3,7 +3,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt'; 
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { CotizacionOrmEntity } from './infrastructure/database/entities/cotizacion.orm-entity';
-import { UsuarioOrmEntity } from './infrastructure/database/entities/usuario.orm-entity'; 
 import { CotizacionesController } from './infrastructure/http/controllers/cotizaciones.controller';
 import { CrearCotizacionService } from './application/services/crear-cotizacion.service';
 import { ObtenerCotizacionesService } from './application/services/obtener-cotizaciones.service';
@@ -12,15 +11,13 @@ import { EnviarCotizacionService } from './application/services/enviar-cotizacio
 import { CotizacionTypeOrmRepository } from './infrastructure/database/repositories/cotizacion-typeorm.repository';
 import { COTIZACION_REPOSITORY } from './domain/interfaces/cotizacion.repository';
 import { SecurityLoggerService } from './application/services/security-logger.service';
-import { AuthController } from './infrastructure/http/controllers/auth.controller'; 
-import { AuthService } from './application/services/auth.service'; 
-import { CotizacionesCronService } from './application/services/cotizaciones-cron.service'; // <-- Tu único servicio de fondo
+import { CotizacionesCronService } from './application/services/cotizaciones-cron.service'; 
 import { SeguridadModule } from '../seguridad/seguridad.module';
 
 @Module({
   imports: [
     ConfigModule,
-    TypeOrmModule.forFeature([CotizacionOrmEntity, UsuarioOrmEntity]), 
+    TypeOrmModule.forFeature([CotizacionOrmEntity]), 
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -29,11 +26,10 @@ import { SeguridadModule } from '../seguridad/seguridad.module';
         signOptions: { expiresIn: '1h' },
       }),
     }),
-    SeguridadModule, // <-- Importamos el módulo de seguridad
+    SeguridadModule, 
   ],
   controllers: [
-    CotizacionesController,
-    AuthController
+    CotizacionesController
   ],
   providers: [
     SecurityLoggerService,
@@ -41,8 +37,7 @@ import { SeguridadModule } from '../seguridad/seguridad.module';
     ObtenerCotizacionesService,
     ObtenerCotizacionPorIdService,
     EnviarCotizacionService,
-    CotizacionesCronService, // <-- Centralizado
-    AuthService,
+    CotizacionesCronService, 
     { provide: COTIZACION_REPOSITORY, useClass: CotizacionTypeOrmRepository },
   ],
 })

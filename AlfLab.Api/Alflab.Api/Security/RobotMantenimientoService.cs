@@ -19,7 +19,8 @@ namespace AlfLab.Api.Security
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("🤖 Robot de mantenimiento iniciado. Patrullando cada 5 minutos...");
+            // Cambiamos el mensaje para que sepas que estás en "Modo Pruebas"
+            _logger.LogInformation("🤖 Robot de mantenimiento iniciado. Patrullando en MODO QA (cada 10 segundos)...");
 
             while (!stoppingToken.IsCancellationRequested)
             {
@@ -27,9 +28,9 @@ namespace AlfLab.Api.Security
                 {
                     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-                    // El robot ahora solo busca usuarios bloqueados cuyo tiempo de castigo ya expiró
+                    // 👇 HACK DE QA: Quitamos la validación de la hora para que perdone inmediatamente
                     var usuariosADesbloquear = await context.Usuarios
-                        .Where(u => u.BloqueadoHasta != null && u.BloqueadoHasta <= DateTime.UtcNow)
+                        .Where(u => u.BloqueadoHasta != null) 
                         .ToListAsync(stoppingToken);
 
                     if (usuariosADesbloquear.Any())
@@ -44,8 +45,8 @@ namespace AlfLab.Api.Security
                     }
                 }
 
-                // El robot se va a dormir 5 minutos antes de volver a revisar
-                await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
+                // 👇 HACK DE QA: El robot se va a dormir solo 10 segundos
+                await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
             }
         }
     }

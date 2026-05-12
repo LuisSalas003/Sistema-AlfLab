@@ -8,6 +8,7 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Cryptography;
+using Microsoft.AspNetCore.Authorization;
 
 namespace AlfLab.Api.Controllers
 {
@@ -25,27 +26,29 @@ namespace AlfLab.Api.Controllers
             _config = config;
         }
 
-        [HttpPost("registrar")]
+[HttpPost("registrar")]
+[Authorize] // 👈 EL CANDADO MÁGICO: Exige que traigan un Token JWT válido
 public async Task<IActionResult> Registrar([FromBody] RegistroUsuarioRequestDto request)
 {
-    // 1. Verificar si el usuario ya existe (¡Esto es lo que faltaba!)
+    // 1. Verificar si el usuario ya existe
     var usuarioExistente = await _usuarioRepository.ObtenerPorCorreoAsync(request.Correo);
     if (usuarioExistente != null)
     {
         return BadRequest(new { mensaje = "El correo ya está registrado en el sistema." });
     }
 
-    // 2. Si no existe, procedemos con el registro normal
+    // 2. Si no existe, procedemos con el registro protegido
     var nuevoUsuario = new Usuario
     {
         NombreCompleto = request.NombreCompleto,
         Correo = request.Correo,
         PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
-        Rol = "Admin"
+        // Lo ideal es que el DTO traiga el rol, pero si no, ponle uno de bajo nivel por defecto
+        Rol = "Ventas" 
     };
 
     await _usuarioRepository.AgregarAsync(nuevoUsuario);
-    return Ok(new { mensaje = "Usuario registrado exitosamente en AlfLab." });
+    return Ok(new { mensaje = "Usuario registrado exitosamente por el administrador." });
 }
 
         [HttpPost("login")]

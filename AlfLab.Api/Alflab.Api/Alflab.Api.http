@@ -1,4 +1,4 @@
-@HostAddress = http://127.0.0.1:5004
+@HostAddress = http://127.0.0.1:5000
 
 ### ==========================================
 ### DEMO 0: CREAR EL USUARIO ADMIN (Preparación)
@@ -10,8 +10,8 @@ Content-Type: application/json
 
 {
   "nombreCompleto": "Administrador AlfLab",
-  "correo": "admin@alflab.com",
-  "password": "TuPasswordReal123"
+  "correo": "admin@alflab2.com",
+  "password": "TuPasswordReal4322"
 }
 
 ### ==========================================
