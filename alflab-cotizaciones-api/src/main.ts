@@ -26,6 +26,6 @@ async function bootstrap() {
   // Al poner 'swagger' aquí, respetará la raíz que establecimos en el paso 1.
   SwaggerModule.setup('swagger', app, document); 
 
-  await app.listen(3001);
+  await app.listen(3001, '0.0.0.0');
 }
 bootstrap();

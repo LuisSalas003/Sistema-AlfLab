@@ -45,7 +45,7 @@ services:
     env_file:             # 👈 AÑADIDO: Inyecta variables globales
       - .env
     ports:
-      - "3000:3000"
+      - "3001:3001"
     environment:
       - DB_HOST=db-master
       - DB_PORT=3306
