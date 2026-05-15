@@ -1,3 +1,5 @@
+using System;
+using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -5,7 +7,10 @@ namespace AlfLab.Api.Infrastructure.Security
 {
     public static class EncryptionHelper
     {
-        private static readonly string EncryptionKey = "AlfLabSecretKeyParaDatosSensible"; 
+        // 👇 MODIFICACIÓN CLAVE: Ahora lee del entorno (o usa el respaldo si falla)
+        private static readonly string EncryptionKey = Environment.GetEnvironmentVariable("DB_ENCRYPTION_KEY") ?? "AlfLabSecretKeyParaDatosSensible123!"; 
+        
+        // El Salt (sal) ayuda a que la misma contraseña genere cifrados distintos, aumentando la seguridad.
         private static readonly byte[] Salt = { 0x49, 0x76, 0x61, 0x6e, 0x20, 0x4d, 0x65, 0x64, 0x76, 0x65, 0x64, 0x65, 0x76 };
 
         public static string Encrypt(string clearText)
@@ -15,7 +20,7 @@ namespace AlfLab.Api.Infrastructure.Security
             byte[] clearBytes = Encoding.Unicode.GetBytes(clearText);
             using (Aes encryptor = Aes.Create())
             {
-                // MÉTODO MODERNO: Generamos 48 bytes de un solo golpe sin instanciar objetos obsoletos
+                // MÉTODO MODERNO: Generamos 48 bytes de un solo golpe
                 byte[] keyMaterial = Rfc2898DeriveBytes.Pbkdf2(
                     Encoding.UTF8.GetBytes(EncryptionKey),
                     Salt,

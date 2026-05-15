@@ -3,7 +3,6 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CotizacionOrmEntity } from '../../infrastructure/database/entities/cotizacion.orm-entity';
-// 👇 1. Importamos el Vigía (Verifica que los '../' sean correctos hacia tu carpeta de seguridad)
 import { ReplicaMonitorService } from '../../../seguridad/replica-monitor.service';
 
 @Injectable()
@@ -13,33 +12,42 @@ export class CotizacionesCronService {
   constructor(
     @InjectRepository(CotizacionOrmEntity)
     private readonly cotizacionRepo: Repository<CotizacionOrmEntity>,
-    // 👇 2. Inyectamos el Vigía en el constructor
     private readonly monitor: ReplicaMonitorService,
   ) {}
 
-  // 🤖 TAREA 1: Simulador de facturación
+  // 🤖 TAREA 1: Robot de Aceptación de Cotizaciones
   @Cron(CronExpression.EVERY_MINUTE)
-  async procesarFacturasAutomaticas() {
-    this.logger.debug('🤖 Iniciando simulación de facturación...');
+  async procesarCotizacionesParaAceptar() {
+    this.logger.debug('🤖 [Robot] Iniciando búsqueda de cotizaciones pendientes...');
     
-    // 👇 3. EL CANDADO: Protege la facturación
+    // 👇 EL CANDADO: Protege la base de datos si la réplica está caída
     if (!this.monitor.isReplicaActive) {
-      this.logger.warn('⏳ Facturación pausada: Esperando a que la base de datos se recupere.');
+      this.logger.warn('⏳ [Robot] Pausado: Esperando a que la base de datos se recupere.');
       return; 
     }
 
     try {
-      const cotizacionesPendientes = await this.cotizacionRepo.find({ where: { estado: 'BORRADOR' } });
+      // Buscamos las cotizaciones iniciales
+      const cotizacionesPendientes = await this.cotizacionRepo.find({ 
+        where: { estado: 'BORRADOR' } 
+      });
 
+      // Si no hay nada que hacer, salimos silenciosamente
       if (cotizacionesPendientes.length === 0) return;
 
+      this.logger.log(`⚙️ Encontradas ${cotizacionesPendientes.length} cotizaciones para procesar.`);
+
+      // Procesamos y cambiamos el estado
       for (const cotizacion of cotizacionesPendientes) {
-        cotizacion.estado = 'FACTURADA'; 
+        cotizacion.estado = 'ACEPTADA'; 
+        // Actualizamos la fecha de modificación para auditoría
+        cotizacion.fechaActualizacion = new Date();
+        
         await this.cotizacionRepo.save(cotizacion);
-        this.logger.log(`✅ Cotización ${cotizacion.folio || cotizacion.id} facturada.`);
+        this.logger.log(`✅ Cotización [${cotizacion.folio || cotizacion.id}] ha cambiado a estado ACEPTADA.`);
       }
     } catch (error: any) {
-      this.logger.error(`Error en facturación: ${error.message}`);
+      this.logger.error(`❌ Error crítico en el robot de aceptación: ${error.message}`);
     }
   }
 
@@ -48,12 +56,12 @@ export class CotizacionesCronService {
   async limpiarCotizacionesViejas() {
     this.logger.debug('🧹 Ejecutando limpieza de cotizaciones antiguas...');
 
-    // 👇 4. EL CANDADO: Protege la limpieza también
+    // 👇 EL CANDADO: Protege la limpieza
     if (!this.monitor.isReplicaActive) {
-      this.logger.warn('⏳ Limpieza pausada: Esperando a que la base de datos se recupere.');
+      this.logger.warn('⏳ [Robot Limpiador] Pausado: Esperando recuperación de BD.');
       return; 
     }
 
-    // Pega aquí la lógica que tenías en tu LimpiadorCotizacionesService
+    // Aquí va tu lógica del LimpiadorCotizacionesService
   }
 }

@@ -18,7 +18,16 @@ namespace AlfLab.Api.Middlewares
 
         public async Task InvokeAsync(HttpContext context)
         {
-            // Verificación ultra rápida en RAM (No afecta el rendimiento)
+            // 1. NUEVA REGLA: Las operaciones de escritura siempre pasan directo a la base principal
+            var method = context.Request.Method;
+            if (HttpMethods.IsPost(method) || HttpMethods.IsPut(method) || 
+                HttpMethods.IsDelete(method) || HttpMethods.IsPatch(method))
+            {
+                await _next(context);
+                return;
+            }
+
+            // 2. Verificación ultra rápida en RAM (Solo afecta a los GET)
             if (!_estado.ReplicaEstaActiva)
             {
                 // Devolvemos un 200 OK (Para que no salte como "Error" en el frontend)
@@ -26,10 +35,10 @@ namespace AlfLab.Api.Middlewares
                 context.Response.StatusCode = StatusCodes.Status200OK; 
                 context.Response.ContentType = "application/json";
                 await context.Response.WriteAsync("{\"success\": false, \"message\": \"El sistema está realizando rutinas de auto-recuperación y sincronización en segundo plano. Por favor, intente su operación en unos segundos.\"}");
-                return; // Bloquea Selects, Inserts, Deletes, absolutamente todas las operaciones.
+                return; // Bloquea unicamente consultas de lectura
             }
 
-            // Si el semáforo está en verde, pasa al instante
+            // 3. Si el semáforo está en verde, pasa al instante
             await _next(context);
         }
     }

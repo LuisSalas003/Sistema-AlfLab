@@ -102,7 +102,7 @@ public async Task<IActionResult> Registrar([FromBody] RegistroUsuarioRequestDto 
                 issuer: _config["Jwt:Issuer"],
                 audience: _config["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.Now.AddMinutes(2), // Para pruebas, 30 segundos es suficiente.
+                expires: DateTime.Now.AddMinutes(30), 
                 signingCredentials: creds
             );
 

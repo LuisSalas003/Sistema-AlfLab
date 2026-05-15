@@ -3,6 +3,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using AlfLab.Api.Infrastructure.Contexts;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace AlfLab.Api.Security
 {
@@ -19,8 +23,12 @@ namespace AlfLab.Api.Security
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            // 👇 ESTA ES LA PAUSA SALVAVIDAS PARA DOCKER Y EF CORE
+            _logger.LogInformation("⏳ Robot Vigía: Esperando 10 segundos para que la base de datos se construya...");
+            await Task.Delay(10000, stoppingToken); 
+
             // Cambiamos el mensaje para que sepas que estás en "Modo Pruebas"
-            _logger.LogInformation("🤖 Robot de mantenimiento iniciado. Patrullando en MODO QA (cada 10 segundos)...");
+            _logger.LogInformation("🤖 Robot de mantenimiento iniciado. Patrullando en MODO QA (cada 60 segundos)...");
 
             while (!stoppingToken.IsCancellationRequested)
             {
@@ -28,7 +36,7 @@ namespace AlfLab.Api.Security
                 {
                     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-                    // 👇 HACK DE QA: Quitamos la validación de la hora para que perdone inmediatamente
+                    // HACK DE QA: Quitamos la validación de la hora para que perdone inmediatamente
                     var usuariosADesbloquear = await context.Usuarios
                         .Where(u => u.BloqueadoHasta != null) 
                         .ToListAsync(stoppingToken);
@@ -45,8 +53,8 @@ namespace AlfLab.Api.Security
                     }
                 }
 
-                // 👇 HACK DE QA: El robot se va a dormir solo 10 segundos
-                await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
+                // El robot se va a dormir 60 segundos antes de la siguiente patrulla
+                await Task.Delay(TimeSpan.FromSeconds(60), stoppingToken);
             }
         }
     }

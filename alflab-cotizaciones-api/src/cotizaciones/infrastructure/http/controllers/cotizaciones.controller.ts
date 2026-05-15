@@ -4,11 +4,12 @@ import { ObtenerCotizacionesService } from '../../../application/services/obtene
 import { ObtenerCotizacionPorIdService } from '../../../application/services/obtener-cotizacion-por-id.service';
 import { EnviarCotizacionService } from '../../../application/services/enviar-cotizacion.service';
 import { CrearCotizacionDto } from '../dtos/crear-cotizacion.dto';
-import { AuthGuard } from '@nestjs/passport/dist/auth.guard';
 import { SubirFacturaDto } from '../../../application/dtos/subir-factura.dto';
 import { SecurityLoggerService } from '../../../application/services/security-logger.service';
 import type { Request } from 'express';
+import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
 
+@UseGuards(JwtAuthGuard) // <-- ¡ESTO CIERRA LA PUERTA!
 @Controller('cotizaciones')
 export class CotizacionesController {
   constructor(
@@ -25,7 +26,7 @@ export class CotizacionesController {
     return { mensaje: 'Cotización creada', data };
   }
 
-  @UseGuards(AuthGuard('jwt')) // <-- ¡ESTO CIERRA LA PUERTA!
+  
 
   @Get()
   async obtenerTodas() {

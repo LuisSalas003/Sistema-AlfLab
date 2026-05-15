@@ -1,8 +1,5 @@
 @HostAddress = http://localhost:3001
-@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxaUFMOEgyMURXU3F5Y1lyRVY4dEg1RzM0Mmd4M0EybmppVG05aVpVdHJ0RGxiMGZqTmRzc1ltMmJPTTB6anF1IiwiaWQiOiI5Iiwicm9sIjoiVmVudGFzIiwiZXhwIjoxNzc4NjE0ODkyLCJpc3MiOiJBbGZMYWJBcGkiLCJhdWQiOiJBbGZMYWJGcm9udGVuZCJ9.zHNqzPkGB9U2emjzVs0GInXd7Bqd6oG1LBkJhvxfysM
-  "refreshToken": "d7H3lZPqsm/dyvjiS+nPZgtoQnT5S8RkkVM766T3LOzw4HWhQ8d68+++3NJh1khIL4VFvkgrNXFTTHB05bsYbA==",
-  "refreshToken": "QeB8+xjClKWNzfcahbbYRFW06ftMbUNrD+ftKdV2xm7Q5GFgd4F6Xd+3aNwUaz9AjussRkSQpJtFF6W85YNz2w=="
-
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBhbGZsYWIuY29tIiwiaWQiOiI0Iiwicm9sIjoiVmVudGFzIiwiZXhwIjoxNzc4ODYxMjc5LCJpc3MiOiJBbGZMYWJBcGkiLCJhdWQiOiJBbGZMYWJGcm9udGVuZCJ9.ECDQdaXWMreWwCycicr3H9LfwipKhmo-w2CgN-jnRS0
 ### =========================================================
 ### PREPARACIÓN DE DATOS ANTES DE QUE LLEGUE EL MAESTRO
 ### =========================================================
@@ -13,9 +10,9 @@ Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "clienteId": "EMP-993",
-  "descripcion": "Cotización de Mantenimiento Inicial",
-  "total": 15000,
+  "clienteId": "EMP-996",
+  "descripcion": "Cotización de Mantenimiento apagon replica",
+  "total": 15,
   "productos": [
     { "nombre": "Mantenimiento Preventivo", "cantidad": 1, "precio": 15000 }
   ]

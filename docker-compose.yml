@@ -1,42 +1,43 @@
-version: '3.8'
-
 services:
   # ==========================================
   # 1. ECOSISTEMA NESTJS (API DE COTIZACIONES)
   # ==========================================
   db-master:
-    build:
-      context: ./alflab-cotizaciones-api
-      dockerfile: Dockerfile.db
+    image: mysql:8.0
     container_name: alflab_db_master
     restart: always
-    env_file:             
+    env_file: 
       - .env
-    command: --server-id=1 --log-bin=mysql-bin
+    # 👇 ACTIVAMOS GTID (El GPS para datos)
+    command: ["mysqld", "--server-id=1", "--log-bin=mysql-bin", "--gtid_mode=ON", "--enforce_gtid_consistency=ON"]
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_MASTER_ROOT_PASSWORD:-Root_Profe_2026}
-      MYSQL_DATABASE: ${DB_MASTER_DATABASE:-alflab_cotizaciones}
     ports:
       - "3309:3306"
     volumes:
-      # 👇 VOLUMEN PERSISTENTE: Se creará una carpeta "data" en tu proyecto
       - ./data/mysql_master:/var/lib/mysql
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - alflab-network
 
   db-replica:
     image: mysql:8.0
     container_name: alflab_db_replica
     restart: always
-    env_file:             
+    env_file: 
       - .env
-    command: --server-id=2 --read-only=1
+    # 👇 ACTIVAMOS GTID Y MODO LECTURA
+    command: ["mysqld", "--server-id=2", "--gtid_mode=ON", "--enforce_gtid_consistency=ON", "--read-only=1"]
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-Root_Profe_2026}
-      MYSQL_DATABASE: ${DB_REPLICA_DATABASE:-alflab_cotizaciones_replica}
     ports:
       - "3307:3306"
     volumes:
-      # 👇 VOLUMEN PERSISTENTE
       - ./data/mysql_replica:/var/lib/mysql
+      # 👇 SCRIPT PARA CONEXIÓN AUTOMÁTICA
+      - ./scripts/replica-init.sql:/docker-entrypoint-initdb.d/replica-init.sql
+    networks:
+      - alflab-network
 
   api-cotizaciones:
     build:
@@ -44,7 +45,7 @@ services:
       dockerfile: Dockerfile
     container_name: alflab_api_node
     restart: always
-    env_file:             
+    env_file: 
       - .env
     ports:
       - "3001:3001"
@@ -53,11 +54,13 @@ services:
       - DB_PORT=3306
       - DB_USER=root
       - DB_PASSWORD=${DB_MASTER_ROOT_PASSWORD:-Root_Profe_2026}
-      - DB_NAME=${DB_MASTER_DATABASE:-alflab_cotizaciones}
+      - DB_NAME=alflab_cotizaciones
       - JWT_SECRET=${JWT_SECRET:-Firma_Local_De_Prueba_2026}
       - TZ=America/Mexico_City
     depends_on:
       - db-master
+    networks:
+      - alflab-network
 
   # ==========================================
   # 2. ECOSISTEMA .NET (SISTEMA PRINCIPAL)
@@ -66,24 +69,24 @@ services:
     image: mysql:8.0
     container_name: alflab_db_dotnet
     restart: always
-    env_file:             
+    env_file: 
       - .env
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root}
-      MYSQL_DATABASE: alflab_principal
     ports:
       - "3308:3306"
     volumes:
-      # 👇 VOLUMEN PERSISTENTE
       - ./data/mysql_dotnet:/var/lib/mysql
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - alflab-network
 
   api-principal:
     build:
       context: ./AlfLab.Api 
-      dockerfile: Dockerfile
     container_name: alflab_api_dotnet
     restart: always
-    env_file:             
+    env_file: 
       - .env
     ports:
       - "5000:80"
@@ -94,5 +97,11 @@ services:
     depends_on:
       - db-alflab-dotnet
       - db-replica
+    networks:
+      - alflab-network
+    volumes:
+      - ./data/aspnet_keys:/app/keys
 
-# 🔴 ELIMINAMOS LA SECCIÓN "volumes:" DE AQUÍ ABAJO PORQUE AHORA USAMOS CARPETAS REALES
+networks:
+  alflab-network:
+    driver: bridge
