@@ -1,0 +1,13 @@
+# 1. Ignorar bases de datos locales de Docker (¡CRÍTICO!)
+data/
+
+# 2. Ignorar contraseñas y secretos
+.env
+
+# 3. Ignorar dependencias de NestJS / Node
+node_modules/
+dist/
+
+# 4. Ignorar compilaciones de .NET
+[Bb]in/
+[Oo]bj/

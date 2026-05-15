@@ -1,0 +1,52 @@
+@HostAddress = http://localhost:5000
+
+### =========================================================
+### PASO 0: CREAR EL USUARIO ADMINISTRADOR
+### =========================================================
+POST {{HostAddress}}/api/auth/registrar
+Content-Type: application/json
+
+{
+  "nombreCompleto": "Admin AlfLab",
+  "correo": "admin@alflab.com",
+  "password": "TuPasswordReal123"
+}
+
+### =========================================================
+### PASO 5.A: DEMOSTRAR LOGIN Y OBTENER GAFETE
+### =========================================================
+# Ejecuta esto para iniciar sesión y copia el Token largo.
+POST {{HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "correo": "admin@alflab.com",
+  "password": "TuPasswordReal123" 
+}
+
+### =========================================================
+### PASO 5.B: DEMOSTRAR PROTECCIÓN DEL REGISTRO (SIN TOKEN)
+### =========================================================
+# Dispara esto para demostrar que nadie puede crear usuarios.
+# Te debe devolver un 401 Unauthorized.
+POST {{HostAddress}}/api/auth/registrar
+Content-Type: application/json
+
+{
+  "nombreCompleto": "Intruso",
+  "correo": "hacker@alflab.com",
+  "password": "HackerPassword123"
+}
+
+### =========================================================
+### PASO 5.C: DEMOSTRAR ATAQUE FUERZA BRUTA
+### =========================================================
+# Dispara este 4 veces seguidas rápido para que el sistema 
+# bloquee la IP/Usuario.
+POST {{HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "correo": "admin@alflab.com",
+  "password": "ClaveIncorrecta123"
+}
