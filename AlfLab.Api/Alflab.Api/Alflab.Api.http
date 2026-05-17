@@ -34,7 +34,7 @@ Content-Type: application/json
 
 {
   "nombreCompleto": "Intruso",
-  "correo": "hacker@alflab.com",
+  "correo": "hacker@alflab1.com",
   "password": "HackerPassword123"
 }
 

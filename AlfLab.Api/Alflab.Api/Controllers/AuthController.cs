@@ -27,7 +27,7 @@ namespace AlfLab.Api.Controllers
         }
 
 [HttpPost("registrar")]
-//[Authorize] // 👈 EL CANDADO MÁGICO: Exige que traigan un Token JWT válido
+[Authorize] // 👈 EL CANDADO MÁGICO: Exige que traigan un Token JWT válido
 public async Task<IActionResult> Registrar([FromBody] RegistroUsuarioRequestDto request)
 {
     // 1. Verificar si el usuario ya existe
