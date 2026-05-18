@@ -8,7 +8,7 @@ Content-Type: application/json
 
 {
   "nombreCompleto": "Admin AlfLab",
-  "correo": "admin@alflab.com",
+  "correo": "admin1@alflab1.com",
   "password": "TuPasswordReal123"
 }
 
@@ -49,4 +49,19 @@ Content-Type: application/json
 {
   "correo": "admin@alflab.com",
   "password": "ClaveIncorrecta123"
+}
+
+### =========================================================
+### PASO 6: DEMOSTRAR DEFENSA CONTRA XSS (CROSS-SITE SCRIPTING)
+### =========================================================
+# Dispara esto usando el token del Admin.
+# El sistema debe detectar las etiquetas HTML y rechazar la petición.
+POST {{HostAddress}}/api/auth/registrar
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBhbGZsYWIuY29tIiwiaWQiOiI3Iiwicm9sIjoiVmVudGFzIiwiZXhwIjoxNzc5MDY4NzY0LCJpc3MiOiJBbGZMYWJBcGkiLCJhdWQiOiJBbGZMYWJGcm9udGVuZCJ9.2JWKj5Fq2jxqnvssX9goQ-R1YAN_OWxMJ3iLy0iFadA
+
+{
+  "nombreCompleto": "<script>alert('Robando cookies del sistema');</script> Juan",
+  "correo": "juan.hacker2@alflab.com",
+  "password": "Password123!"
 }

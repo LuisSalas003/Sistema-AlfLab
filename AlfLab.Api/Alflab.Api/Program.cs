@@ -46,6 +46,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddHostedService<RobotMantenimientoService>(); 
 builder.Services.AddSingleton<EstadoSistema>(); 
 builder.Services.AddHostedService<MonitorReplicaService>(); 
+builder.Services.AddScoped<IAuditoriaRepository, AuditoriaRepository>();
 
 // --- 5. AUTENTICACIÓN JWT (Con Validación Anti-Clonación) ---
 var jwtKey = Environment.GetEnvironmentVariable("JWT_SECRET") ?? "EstaEsUnaLlaveDeRespaldoPorSiFallaElEnv123!";
@@ -135,8 +136,24 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<ApplicationDbContext>();
+        
+        // 1. Ejecuta las migraciones existentes del proyecto
         await context.Database.MigrateAsync(); 
-        Console.WriteLine("✅ Base de datos sincronizada (Migraciones aplicadas).");
+
+        // 2. 👇 ASEGURAR TABLA DE AUDITORÍA AUTOMÁTICA
+        // Si la tabla no existe en MySQL, este script la crea al vuelo inmediatamente
+        var sqlAuditoria = @"
+            CREATE TABLE IF NOT EXISTS RegistrosAuditoria (
+                Id INT AUTO_INCREMENT PRIMARY KEY,
+                Fecha DATETIME(6) NOT NULL,
+                TipoAtaque VARCHAR(50) NOT NULL,
+                CorreoInvolucrado VARCHAR(255) NOT NULL,
+                Detalles TEXT NOT NULL
+            );";
+        
+        await context.Database.ExecuteSqlRawAsync(sqlAuditoria);
+        
+        Console.WriteLine("✅ Base de datos sincronizada (Migraciones y Tabla de Auditoría aplicadas con éxito).");
     }
     catch (Exception ex)
     {

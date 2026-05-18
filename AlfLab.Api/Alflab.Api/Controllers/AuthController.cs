@@ -6,9 +6,11 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Threading.Tasks;
 
 namespace AlfLab.Api.Controllers
 {
@@ -18,79 +20,120 @@ namespace AlfLab.Api.Controllers
     {
         private readonly IUsuarioRepository _usuarioRepository;
         private readonly IConfiguration _config;
+        private readonly ILogger<AuthController> _logger;
+        private readonly IAuditoriaRepository _auditoriaRepository; // 👈 Agregamos el repositorio
 
-        // Inyectamos el repositorio y la configuración (para leer la llave secreta del appsettings.json)
-        public AuthController(IUsuarioRepository usuarioRepository, IConfiguration config)
+        public AuthController(
+            IUsuarioRepository usuarioRepository, 
+            IConfiguration config, 
+            ILogger<AuthController> logger,
+            IAuditoriaRepository auditoriaRepository) // 👈 Lo inyectamos
         {
             _usuarioRepository = usuarioRepository;
             _config = config;
+            _logger = logger;
+            _auditoriaRepository = auditoriaRepository;
         }
 
-[HttpPost("registrar")]
-[Authorize] // 👈 EL CANDADO MÁGICO: Exige que traigan un Token JWT válido
-public async Task<IActionResult> Registrar([FromBody] RegistroUsuarioRequestDto request)
-{
-    // 1. Verificar si el usuario ya existe
-    var usuarioExistente = await _usuarioRepository.ObtenerPorCorreoAsync(request.Correo);
-    if (usuarioExistente != null)
-    {
-        return BadRequest(new { mensaje = "El correo ya está registrado en el sistema." });
-    }
+        [HttpPost("registrar")]
+        [Authorize] 
+        public async Task<IActionResult> Registrar([FromBody] RegistroUsuarioRequestDto request)
+        {
+            // =========================================================
+            // DEFENSA XSS CON PERSISTENCIA EN BASE DE DATOS
+            // =========================================================
+            if (request.NombreCompleto.Contains("<") || request.NombreCompleto.Contains(">") || request.NombreCompleto.Contains("script"))
+            {
+                // Guardamos el ataque en la base de datos de manera inmutable
+                var ataque = new RegistroAuditoria
+                {
+                    TipoAtaque = "XSS",
+                    CorreoInvolucrado = request.Correo,
+                    Detalles = $"Intento de inyección en NombreCompleto. Payload: {request.NombreCompleto}"
+                };
+                await _auditoriaRepository.GuardarAtaqueAsync(ataque);
 
-    // 2. Si no existe, procedemos con el registro protegido
-    var nuevoUsuario = new Usuario
-    {
-        NombreCompleto = request.NombreCompleto,
-        Correo = request.Correo,
-        PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
-        // Lo ideal es que el DTO traiga el rol, pero si no, ponle uno de bajo nivel por defecto
-        Rol = "Ventas" 
-    };
+                _logger.LogWarning("🛡️ ALERTA DE SEGURIDAD: XSS guardado en base de datos para: {Correo}", request.Correo);
+                
+                return BadRequest(new { 
+                    mensaje = "ALERTA DE SEGURIDAD: Inyección XSS detectada y bloqueada." 
+                });
+            }
 
-    await _usuarioRepository.AgregarAsync(nuevoUsuario);
-    return Ok(new { mensaje = "Usuario registrado exitosamente por el administrador." });
-}
+            var usuarioExistente = await _usuarioRepository.ObtenerPorCorreoAsync(request.Correo);
+            if (usuarioExistente != null)
+            {
+                return BadRequest(new { mensaje = "El correo ya está registrado en el sistema." });
+            }
+
+            var nuevoUsuario = new Usuario
+            {
+                NombreCompleto = request.NombreCompleto,
+                Correo = request.Correo,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+                Rol = "Ventas" 
+            };
+
+            await _usuarioRepository.AgregarAsync(nuevoUsuario);
+            return Ok(new { mensaje = "Usuario registrado exitosamente." });
+        }
 
         [HttpPost("login")]
-        [EnableRateLimiting("ReglaLoginEstricto")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
         {
             var usuario = await _usuarioRepository.ObtenerPorCorreoAsync(request.Correo);
             if (usuario == null)
                 return Unauthorized(new { mensaje = "Credenciales incorrectas." });
 
-            bool passwordValido = BCrypt.Net.BCrypt.Verify(request.Password, usuario.PasswordHash);
-            if (!passwordValido)
-                return Unauthorized(new { mensaje = "Credenciales incorrectas." });
-            // 1. Fabricamos la Llave 1 (El JWT de 30 segundos)
-            var token = GenerarJwtToken(usuario);
+            if (usuario.BloqueadoHasta.HasValue && usuario.BloqueadoHasta.Value > DateTime.Now)
+            {
+                return Unauthorized(new { mensaje = "Cuenta bloqueada temporalmente." });
+            }
 
-            // 2. Fabricamos la Llave 2 (El Refresh Token de 7 días)
+            bool passwordValido = BCrypt.Net.BCrypt.Verify(request.Password, usuario.PasswordHash);
+            
+            if (!passwordValido)
+            {
+                usuario.IntentosFallidos += 1;
+                
+                // Guardamos el intento de Fuerza Bruta en la tabla de auditoría
+                var ataque = new RegistroAuditoria
+                {
+                    TipoAtaque = "Fuerza Bruta",
+                    CorreoInvolucrado = request.Correo,
+                    Detalles = $"Intento fallido #{usuario.IntentosFallidos} de 5."
+                };
+                await _auditoriaRepository.GuardarAtaqueAsync(ataque);
+
+                if (usuario.IntentosFallidos >= 5)
+                {
+                    usuario.BloqueadoHasta = DateTime.Now.AddMinutes(1);
+                    _logger.LogCritical("🚨 SEGURIDAD: Usuario {Correo} bloqueado.", request.Correo);
+                }
+
+                await _usuarioRepository.ActualizarAsync(usuario); 
+                return Unauthorized(new { mensaje = "Credenciales incorrectas." });
+            }
+
+            usuario.IntentosFallidos = 0;
+            usuario.BloqueadoHasta = null;
+
+            var token = GenerarJwtToken(usuario);
             var refreshToken = GenerarRefreshToken();
 
-            // 3. Guardamos la Llave 2 en el usuario y actualizamos la base de datos
             usuario.RefreshToken = refreshToken;
             usuario.RefreshTokenExpiryTime = DateTime.Now.AddDays(7);
             await _usuarioRepository.ActualizarAsync(usuario);
 
-            // 4. Entregamos ambas llaves en la respuesta
-            return Ok(new 
-            { 
-                token = token,
-                refreshToken = refreshToken,
-                mensaje = "Login exitoso. Guarda bien tus llaves."
-            });
+            return Ok(new { token = token, refreshToken = refreshToken });
         }
 
-        // Método privado de apoyo para fabricar la llave
         private string GenerarJwtToken(Usuario usuario)
         {
-            // Leemos la llave secreta que pusiste en appsettings.json
-          var keyInfo = Environment.GetEnvironmentVariable("JWT_SECRET") ?? "EstaEsUnaLlaveDeRespaldoPorSiFallaElEnv123!";
+            var keyInfo = Environment.GetEnvironmentVariable("JWT_SECRET") ?? "EstaEsUnaLlaveDeRespaldoPorSiFallaElEnv123!";
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(keyInfo));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-            // Guardamos datos del usuario DENTRO del token (Claims)
             var claims = new[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, usuario.Correo),
@@ -116,7 +159,5 @@ public async Task<IActionResult> Registrar([FromBody] RegistroUsuarioRequestDto 
             rng.GetBytes(randomNumber);
             return Convert.ToBase64String(randomNumber);
         }
-        
-        
     }
 }
