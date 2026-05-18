@@ -88,3 +88,16 @@ Content-Type: application/json
   "total": -500,
   "productos": []
 }
+
+### =========================================================
+### PASO 7: DEMOSTRAR MANEJO DE ARCHIVOS EN NESTJS
+### =========================================================
+POST http://localhost:3001/archivos/subir
+Content-Type: multipart/form-data; boundary=boundary-test
+
+--boundary-test
+Content-Disposition: form-data; name="archivo"; filename="cotizacion_001.pdf"
+Content-Type: application/pdf
+
+< ./cotizacion_001.pdf
+--boundary-test--

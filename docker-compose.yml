@@ -8,7 +8,6 @@ services:
     restart: always
     env_file: 
       - .env
-    # 👇 ACTIVAMOS GTID (El GPS para datos)
     command: ["mysqld", "--server-id=1", "--log-bin=mysql-bin", "--gtid_mode=ON", "--enforce_gtid_consistency=ON"]
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_MASTER_ROOT_PASSWORD:-Root_Profe_2026}
@@ -26,7 +25,6 @@ services:
     restart: always
     env_file: 
       - .env
-    # 👇 ACTIVAMOS GTID Y MODO LECTURA
     command: ["mysqld", "--server-id=2", "--gtid_mode=ON", "--enforce_gtid_consistency=ON", "--read-only=1"]
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-Root_Profe_2026}
@@ -34,7 +32,6 @@ services:
       - "3307:3306"
     volumes:
       - ./data/mysql_replica:/var/lib/mysql
-      # 👇 SCRIPT PARA CONEXIÓN AUTOMÁTICA
       - ./scripts/replica-init.sql:/docker-entrypoint-initdb.d/replica-init.sql
     networks:
       - alflab-network
@@ -61,6 +58,9 @@ services:
       - db-master
     networks:
       - alflab-network
+    # 👇 ESTA ES LA MODIFICACIÓN: VOLUMEN PARA LOS ARCHIVOS DE NESTJS
+    volumes:
+      - ./data/uploads_nest:/app/uploads 
 
   # ==========================================
   # 2. ECOSISTEMA .NET (SISTEMA PRINCIPAL)
