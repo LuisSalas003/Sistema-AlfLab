@@ -9,8 +9,11 @@ async function bootstrap() {
   // Set global API prefix
   app.setGlobalPrefix('api');
 
-  // Enable global validation
-  app.useGlobalPipes(new ValidationPipe());
+  // 👇 Enable global validation (AHORA EN MODO ESTRICTO)
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true, // Limpia silenciosamente cualquier campo que no esté definido en tu DTO
+    forbidNonWhitelisted: true, // Si mandan un campo extra o basura, bloquea toda la petición con un error 400
+  }));
   
   // 3. TERCERO construimos Swagger (¡Ahora con el candadito de vuelta!)
   const config = new DocumentBuilder()

@@ -1,5 +1,5 @@
 @HostAddress = http://localhost:3001
-@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBhbGZsYWIuY29tIiwiaWQiOiI0Iiwicm9sIjoiVmVudGFzIiwiZXhwIjoxNzc5MDU0NTQwLCJpc3MiOiJBbGZMYWJBcGkiLCJhdWQiOiJBbGZMYWJGcm9udGVuZCJ9.8DxktgoaTKvr8qOas7pTAarjHBQY_jDfkppwOKEY_FM
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBhbGZsYWIuY29tIiwiaWQiOiI3Iiwicm9sIjoiVmVudGFzIiwiZXhwIjoxNzc5MDcxMjY5LCJpc3MiOiJBbGZMYWJBcGkiLCJhdWQiOiJBbGZMYWJGcm9udGVuZCJ9.HiAfGgQXeRFrgjL9bKKnTegYXs6curbcMiAckFo6Kgk
 ### =========================================================
 ### PREPARACIÓN DE DATOS ANTES DE QUE LLEGUE EL MAESTRO
 ### =========================================================
@@ -10,7 +10,7 @@ Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "clienteId": "EMP-997",
+  "clienteId": "EMP-998",
   "descripcion": "Cotización de Mantenimiento cambio de estado a Aceptada",
   "total": 15,
   "productos": [

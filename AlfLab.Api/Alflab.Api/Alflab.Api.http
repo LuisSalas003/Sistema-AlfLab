@@ -58,7 +58,7 @@ Content-Type: application/json
 # El sistema debe detectar las etiquetas HTML y rechazar la petición.
 POST {{HostAddress}}/api/auth/registrar
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBhbGZsYWIuY29tIiwiaWQiOiI3Iiwicm9sIjoiVmVudGFzIiwiZXhwIjoxNzc5MDY4NzY0LCJpc3MiOiJBbGZMYWJBcGkiLCJhdWQiOiJBbGZMYWJGcm9udGVuZCJ9.2JWKj5Fq2jxqnvssX9goQ-R1YAN_OWxMJ3iLy0iFadA
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBhbGZsYWIuY29tIiwiaWQiOiI3Iiwicm9sIjoiVmVudGFzIiwiZXhwIjoxNzc5MDcxMjY5LCJpc3MiOiJBbGZMYWJBcGkiLCJhdWQiOiJBbGZMYWJGcm9udGVuZCJ9.HiAfGgQXeRFrgjL9bKKnTegYXs6curbcMiAckFo6Kgk
 
 {
   "nombreCompleto": "<script>alert('Robando cookies del sistema');</script> Juan",
