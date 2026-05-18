@@ -1,5 +1,6 @@
 using AlfLab.Api.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using AlfLab.Api.Infrastructure.Security;
 
 namespace AlfLab.Api.Infrastructure.Contexts
 {
@@ -9,11 +10,38 @@ namespace AlfLab.Api.Infrastructure.Contexts
         {
         }
 
-        // Tus tablas principales
-        public DbSet<Usuario> Usuarios { get; set; }
         public DbSet<Producto> Productos { get; set; }
+        public DbSet<Usuario> Usuarios { get; set; }
+        public DbSet<RegistroAuditoria> RegistrosAuditoria { get; set; } // 👈 Mantenemos tu tabla de auditoría
 
-        // Tu nueva tabla de auditoría para los ataques
-        public DbSet<RegistroAuditoria> RegistrosAuditoria { get; set; }
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            // =========================================================
+            // CONFIGURACIÓN DE ENCRIPTACIÓN AUTOMÁTICA (RESTAURADA)
+            // =========================================================
+            
+            // Le decimos a EF Core que encripte y desencripte el Nombre automáticamente
+            modelBuilder.Entity<Usuario>()
+                .Property(u => u.NombreCompleto)
+                .HasConversion(
+                    v => EncryptionHelper.Encrypt(v),
+                    v => EncryptionHelper.Decrypt(v)
+                );
+
+            // Hacemos lo mismo con el Correo
+            modelBuilder.Entity<Usuario>()
+                .Property(u => u.Correo)
+                .HasConversion(
+                    v => EncryptionHelper.Encrypt(v),
+                    v => EncryptionHelper.Decrypt(v)
+                );
+
+            // =========================================================
+            // CONFIGURACIÓN DE TABLA DE AUDITORÍA
+            // =========================================================
+            modelBuilder.Entity<RegistroAuditoria>().ToTable("RegistrosAuditoria");
+        }
     }
 }

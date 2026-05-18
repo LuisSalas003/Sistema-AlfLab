@@ -21,13 +21,13 @@ namespace AlfLab.Api.Controllers
         private readonly IUsuarioRepository _usuarioRepository;
         private readonly IConfiguration _config;
         private readonly ILogger<AuthController> _logger;
-        private readonly IAuditoriaRepository _auditoriaRepository; // 👈 Agregamos el repositorio
+        private readonly IAuditoriaRepository _auditoriaRepository;
 
         public AuthController(
             IUsuarioRepository usuarioRepository, 
             IConfiguration config, 
             ILogger<AuthController> logger,
-            IAuditoriaRepository auditoriaRepository) // 👈 Lo inyectamos
+            IAuditoriaRepository auditoriaRepository) 
         {
             _usuarioRepository = usuarioRepository;
             _config = config;
@@ -44,7 +44,6 @@ namespace AlfLab.Api.Controllers
             // =========================================================
             if (request.NombreCompleto.Contains("<") || request.NombreCompleto.Contains(">") || request.NombreCompleto.Contains("script"))
             {
-                // Guardamos el ataque en la base de datos de manera inmutable
                 var ataque = new RegistroAuditoria
                 {
                     TipoAtaque = "XSS",
@@ -60,12 +59,14 @@ namespace AlfLab.Api.Controllers
                 });
             }
 
+            // EF Core se encarga del cifrado de forma invisible al buscar
             var usuarioExistente = await _usuarioRepository.ObtenerPorCorreoAsync(request.Correo);
             if (usuarioExistente != null)
             {
                 return BadRequest(new { mensaje = "El correo ya está registrado en el sistema." });
             }
 
+            // Enviamos los datos en texto plano; el DbContext los encriptará al hacer el SaveChanges
             var nuevoUsuario = new Usuario
             {
                 NombreCompleto = request.NombreCompleto,
@@ -81,6 +82,7 @@ namespace AlfLab.Api.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
         {
+            // EF Core intercepta 'request.Correo' y lo busca usando su equivalencia encriptada en la BD
             var usuario = await _usuarioRepository.ObtenerPorCorreoAsync(request.Correo);
             if (usuario == null)
                 return Unauthorized(new { mensaje = "Credenciales incorrectas." });
@@ -96,7 +98,6 @@ namespace AlfLab.Api.Controllers
             {
                 usuario.IntentosFallidos += 1;
                 
-                // Guardamos el intento de Fuerza Bruta en la tabla de auditoría
                 var ataque = new RegistroAuditoria
                 {
                     TipoAtaque = "Fuerza Bruta",
@@ -134,6 +135,7 @@ namespace AlfLab.Api.Controllers
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(keyInfo));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
+            // Nota: Al generar el Token, 'usuario.Correo' ya vendrá desencriptado automáticamente por EF Core
             var claims = new[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, usuario.Correo),
