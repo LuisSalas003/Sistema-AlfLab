@@ -1,0 +1,20 @@
+# Fase 1: Crear Workflow (Definición del nombre)
+name: Reusable Build Framework
+
+on:
+  workflow_call:
+    # Aquí irán las variables de la Fase 2 más adelante
+    inputs:
+      service_name:
+        required: true
+        type: string
+
+jobs:
+  build-process:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Workflow Started
+        run: echo "Iniciando compilación para el servicio ${{ inputs.service_name }}"

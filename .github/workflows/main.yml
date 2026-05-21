@@ -1,0 +1,14 @@
+# Fase 1: Crear Workflow Principal
+name: AlfLab Main Pipeline
+
+on:
+  push:
+    branches: [ "main" ] # Se activa cuando subes cambios a la rama principal
+
+jobs:
+  # Aquí es donde asociaremos los flujos en la Fase 3
+  check-initial-status:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Status
+        run: echo "Workflow creado correctamente. Listo para Fase 2."
