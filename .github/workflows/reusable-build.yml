@@ -1,13 +1,21 @@
-# Fase 1: Crear Workflow (Definición del nombre)
 name: Reusable Build Framework
 
+# 👈 FASE 2: DECLARACIÓN DE VARIABLES DE ENTRADA (INPUTS)
 on:
   workflow_call:
-    # Aquí irán las variables de la Fase 2 más adelante
     inputs:
       service_name:
         required: true
         type: string
+        description: "Nombre del microservicio"
+      dockerfile_path:
+        required: true
+        type: string
+        description: "Ruta relativa hacia el Dockerfile"
+      context_path:
+        required: true
+        type: string
+        description: "Contexto de ejecución para el comando Docker Build"
 
 jobs:
   build-process:
@@ -16,5 +24,10 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Workflow Started
-        run: echo "Iniciando compilación para el servicio ${{ inputs.service_name }}"
+      # Aquí usamos las variables con la sintaxis ${{ inputs.NUESTRA_VARIABLE }}
+      - name: Log Variable Configuration
+        run: |
+          echo "==== CONFIGURACIÓN DE VARIABLES DETECTADA ===="
+          echo "Servicio a procesar: ${{ inputs.service_name }}"
+          echo "Ubicación del Dockerfile: ${{ inputs.dockerfile_path }}"
+          echo "Contexto de Docker: ${{ inputs.context_path }}"
