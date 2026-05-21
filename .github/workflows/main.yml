@@ -1,14 +1,28 @@
-# Fase 1: Crear Workflow Principal
 name: AlfLab Main Pipeline
 
 on:
   push:
-    branches: [ "main" ] # Se activa cuando subes cambios a la rama principal
+    branches: [ "main" ] # Se activa automáticamente al hacer push a la rama main
+  pull_request:
+    branches: [ "main" ]
 
 jobs:
-  # Aquí es donde asociaremos los flujos en la Fase 3
-  check-initial-status:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Status
-        run: echo "Workflow creado correctamente. Listo para Fase 2."
+  # =========================================================
+  # 👈 FASE 3: ASOCIACIÓN DEL CONTENEDOR 1 (NestJS)
+  # =========================================================
+  api-cotizaciones-nestjs:
+    uses: ./.github/workflows/reusable-build.yml # Llama al molde reutilizable
+    with:
+      service_name: "AlfLab-Cotizaciones-NestJS"
+      dockerfile_path: "./alflab-cotizaciones-api/Dockerfile"
+      context_path: "./alflab-cotizaciones-api"
+
+  # =========================================================
+  # 👈 FASE 3: ASOCIACIÓN DEL CONTENEDOR 2 (.NET)
+  # =========================================================
+  api-principal-dotnet:
+    uses: ./.github/workflows/reusable-build.yml # Llama al mismo molde reutilizable
+    with:
+      service_name: "AlfLab-Principal-DotNet"
+      dockerfile_path: "./Dockerfile" # Si tu Dockerfile de .NET está en la raíz
+      context_path: "."
