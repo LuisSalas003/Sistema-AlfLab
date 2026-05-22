@@ -8,7 +8,8 @@ import { join } from 'node:path';
 import { AuthModule } from './auth/auth.module';
 import { SeguridadModule } from './seguridad/seguridad.module';
 import { ReplicaMonitorService } from './seguridad/replica-monitor.service'; 
-import { ReplicaCheckMiddleware } from './seguridad/replica-check.middleware'; 
+import { ReplicaCheckMiddleware } from './seguridad/replica-check.middleware';
+import { ArchivosController } from './cotizaciones/infrastructure/http/controllers/archivos.controller';
 
 // Obligamos a dotenv a buscar el archivo .env exactamente un nivel arriba de la carpeta 'src' (o 'dist')
 dotenv.config({ path: join(__dirname, '../../.env') });
@@ -47,6 +48,7 @@ dotenv.config({ path: join(__dirname, '../../.env') });
     CotizacionesModule,
     AuthModule,
   ],
+  controllers: [ArchivosController], // 👈 2. Agrégalo aquí
   providers: [ReplicaMonitorService], // 👈 Registramos el Vigía para que el Cron Job empiece a trabajar
 })
 export class AppModule implements NestModule { // 👈 Implementamos NestModule para poder usar Middlewares

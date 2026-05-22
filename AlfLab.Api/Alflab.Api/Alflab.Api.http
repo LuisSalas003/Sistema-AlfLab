@@ -1,5 +1,4 @@
 @HostAddress = http://localhost:5000
-
 ### =========================================================
 ### PASO 0: CREAR EL USUARIO ADMINISTRADOR
 ### =========================================================
@@ -8,60 +7,126 @@ Content-Type: application/json
 
 {
   "nombreCompleto": "Admin AlfLab",
-  "correo": "admin4@alflab.com",
-  "password": "TuPasswordReal123!"
+  "correo": "admin1@alflab.com",
+  "password": "TuPasswordReal123!",
+  "rol": "Admin"
 }
 
-### =========================================================
-### PASO 5.A: DEMOSTRAR LOGIN Y OBTENER GAFETE
-### =========================================================
-# Ejecuta esto para iniciar sesión y copia el Token largo.
+### ====================================================================
+### 🟢 FASE 1: PREPARACIÓN Y OBTENCIÓN DE TOKENS (LOGINS)
+### Objetivo: Iniciar sesión para guardar automáticamente los tokens en memoria.
+### ====================================================================
+
+# @name loginAdmin
+# 1.A - LOGIN ADMINISTRADOR (Ejecuta esto primero)
 POST {{HostAddress}}/api/auth/login
 Content-Type: application/json
 
 {
-  "correo": "admin@alflab.com",
-  "password": "TuPasswordReal123" 
+  "correo": "admin1@alflab.com",
+  "password": "TuPasswordReal123!" 
 }
 
-### =========================================================
-### PASO 5.B: DEMOSTRAR PROTECCIÓN DEL REGISTRO (SIN TOKEN)
-### =========================================================
-# Dispara esto para demostrar que nadie puede crear usuarios.
-# Te debe devolver un 401 Unauthorized.
+###
+@tokenAdmin = {{loginAdmin.response.body.token}}
+
+# @name loginVentas
+# 1.B - LOGIN VENTAS (Ejecuta esto para tener un token de bajo nivel)
+POST {{HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "correo": "ventas@alflab.com",
+  "password": "PasswordSeguro123!"
+}
+
+###
+@tokenVentas = {{loginVentas.response.body.token}}
+
+
+### ====================================================================
+### 🔵 FASE 2: PRUEBAS DE FUNCIONAMIENTO NORMAL (RBAC)
+### Objetivo: Validar que el sistema hace lo que debe hacer con permisos correctos.
+### ====================================================================
+
+# 2.A - REGISTRO EXITOSO (Usa token de Admin, debe dar 200 OK)
+POST {{HostAddress}}/api/auth/registrar
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "nombreCompleto": "Nuevo Empleado",
+  "correo": "ventas1@alflab.com",
+  "password": "PasswordSeguro123!"
+}
+
+###
+
+# 2.B - ACCESO DENEGADO POR FALTA DE RANGOS (Usa token de Ventas, debe dar 403 Forbidden)
+# Un empleado de Ventas intenta registrar a alguien, pero no tiene el Rol Admin
+POST {{HostAddress}}/api/auth/registrar
+Authorization: Bearer {{tokenVentas}}
+Content-Type: application/json
+
+{
+  "nombreCompleto": "Amigo del de Ventas",
+  "correo": "amigo@alflab.com",
+  "password": "PasswordSeguro123!"
+}
+
+
+### ====================================================================
+### 🔴 FASE 3: PRUEBAS DE ATAQUE Y CIBERSEGURIDAD (HACKEO SIMULADO)
+### Objetivo: Validar los escudos de defensa de tu API de .NET.
+### ====================================================================
+
+# 🛡️ DEFENSA 1: PROTECCIÓN CONTRA ANÓNIMOS (Debe dar 401 Unauthorized)
+# Un intruso sin token intenta registrar un usuario.
 POST {{HostAddress}}/api/auth/registrar
 Content-Type: application/json
 
 {
-  "nombreCompleto": "Intruso",
-  "correo": "hacker@alflab1.com",
+  "nombreCompleto": "Intruso Anónimo",
+  "correo": "intruso@alflab.com",
   "password": "HackerPassword123"
 }
 
-### =========================================================
-### PASO 5.C: DEMOSTRAR ATAQUE FUERZA BRUTA
-### =========================================================
-# Dispara este 4 veces seguidas rápido para que el sistema 
-# bloquee la IP/Usuario.
+###
+
+# 🛡️ DEFENSA 2: SUPLANTACIÓN DE CREDENCIALES / SPOOFING (Debe dar 401 Unauthorized)
+# Un atacante toma el token válido de Ventas e intenta inyectarle código para alterar la firma matemática y ganar privilegios.
+POST {{HostAddress}}/api/auth/registrar
+Authorization: Bearer {{tokenVentas}}ESTO_ES_UN_INJECT_MALICIOSO_ALTERANDO_LA_FIRMA
+Content-Type: application/json
+
+{
+  "nombreCompleto": "Hacker Infiltrado",
+  "correo": "hacker2@alflab.com",
+  "password": "HackerPassword123!"
+}
+
+###
+
+# 🛡️ DEFENSA 3: INYECCIÓN DE CÓDIGO XSS (Debe dar 400 Bad Request y guardar auditoría)
+# Un Admin comprometido intenta registrar a alguien con un script malicioso en el nombre para atacar el Frontend.
+POST {{HostAddress}}/api/auth/registrar
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "nombreCompleto": "<script>alert('Robando cookies');</script> Juan",
+  "correo": "xss@alflab.com",
+  "password": "Password123!"
+}
+
+###
+
+# 🛡️ DEFENSA 4: ATAQUE DE FUERZA BRUTA (Debe dar error por intentos excedidos)
+# Dispara este bloque rápido 4 o 5 veces seguidas.
 POST {{HostAddress}}/api/auth/login
 Content-Type: application/json
 
 {
-  "correo": "admin@alflab.com",
+  "correo": "admin1@alflab.com",
   "password": "ClaveIncorrecta123"
-}
-
-### =========================================================
-### PASO 6: DEMOSTRAR DEFENSA CONTRA XSS (CROSS-SITE SCRIPTING)
-### =========================================================
-# Dispara esto usando el token del Admin.
-# El sistema debe detectar las etiquetas HTML y rechazar la petición.
-POST {{HostAddress}}/api/auth/registrar
-Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBhbGZsYWIuY29tIiwiaWQiOiI3Iiwicm9sIjoiVmVudGFzIiwiZXhwIjoxNzc5MDcxMjY5LCJpc3MiOiJBbGZMYWJBcGkiLCJhdWQiOiJBbGZMYWJGcm9udGVuZCJ9.HiAfGgQXeRFrgjL9bKKnTegYXs6curbcMiAckFo6Kgk
-
-{
-  "nombreCompleto": "<script>alert('Robando cookies del sistema');</script> Juan",
-  "correo": "juan.hacker2@alflab.com",
-  "password": "Password123!"
 }

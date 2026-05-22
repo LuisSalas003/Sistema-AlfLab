@@ -7,43 +7,43 @@ namespace AlfLab.Api.Infrastructure.Security
 {
     public static class EncryptionHelper
     {
-        // 👇 MODIFICACIÓN CLAVE: Ahora lee del entorno (o usa el respaldo si falla)
         private static readonly string EncryptionKey = Environment.GetEnvironmentVariable("DB_ENCRYPTION_KEY") ?? "AlfLabSecretKeyParaDatosSensible123!"; 
-        
-        // El Salt (sal) ayuda a que la misma contraseña genere cifrados distintos, aumentando la seguridad.
         private static readonly byte[] Salt = { 0x49, 0x76, 0x61, 0x6e, 0x20, 0x4d, 0x65, 0x64, 0x76, 0x65, 0x64, 0x65, 0x76 };
+
+        // 👇 MODIFICACIÓN APLICADA: Inicialización inline usando una Tupla de C# (Satisface S3963)
+        private static readonly (byte[] Key, byte[] IV) CryptoKeys = GenerateCryptoKeys();
+
+        // Este método se ejecuta una sola vez al inicializar la variable CryptoKeys
+        private static (byte[] Key, byte[] IV) GenerateCryptoKeys()
+        {
+            byte[] keyMaterial = Rfc2898DeriveBytes.Pbkdf2(
+                Encoding.UTF8.GetBytes(EncryptionKey),
+                Salt,
+                100000, 
+                HashAlgorithmName.SHA256,
+                48 
+            );
+
+            return (keyMaterial[0..32], keyMaterial[32..48]);
+        }
 
         public static string Encrypt(string clearText)
         {
             if (string.IsNullOrEmpty(clearText)) return clearText;
             
-            byte[] clearBytes = Encoding.Unicode.GetBytes(clearText);
-            using (Aes encryptor = Aes.Create())
-            {
-                // MÉTODO MODERNO: Generamos 48 bytes de un solo golpe
-                byte[] keyMaterial = Rfc2898DeriveBytes.Pbkdf2(
-                    Encoding.UTF8.GetBytes(EncryptionKey),
-                    Salt,
-                    100000,
-                    HashAlgorithmName.SHA256,
-                    48 // 32 para la Key + 16 para el IV = 48 bytes en total
-                );
+            byte[] clearBytes = Encoding.UTF8.GetBytes(clearText); 
+            
+            using Aes aes = Aes.Create();
+            aes.Key = CryptoKeys.Key; // 👈 Consumimos desde la tupla en memoria
+            aes.IV = CryptoKeys.IV;   // 👈 Consumimos desde la tupla en memoria
 
-                // Dividimos el material usando rangos modernos de C#
-                encryptor.Key = keyMaterial[0..32];  // Toma del byte 0 al 31
-                encryptor.IV = keyMaterial[32..48];  // Toma del byte 32 al 47
-                
-                using (MemoryStream ms = new MemoryStream())
-                {
-                    using (CryptoStream cs = new CryptoStream(ms, encryptor.CreateEncryptor(), CryptoStreamMode.Write))
-                    {
-                        cs.Write(clearBytes, 0, clearBytes.Length);
-                        cs.Close();
-                    }
-                    clearText = Convert.ToBase64String(ms.ToArray());
-                }
-            }
-            return clearText;
+            using MemoryStream ms = new MemoryStream();
+            using CryptoStream cs = new CryptoStream(ms, aes.CreateEncryptor(), CryptoStreamMode.Write);
+            
+            cs.Write(clearBytes, 0, clearBytes.Length);
+            cs.FlushFinalBlock();
+            
+            return Convert.ToBase64String(ms.ToArray());
         }
 
         public static string Decrypt(string cipherText)
@@ -56,31 +56,18 @@ namespace AlfLab.Api.Infrastructure.Security
             try 
             {
                 byte[] cipherBytes = Convert.FromBase64String(cipherText);
-                using (Aes encryptor = Aes.Create())
-                {
-                    // MÉTODO MODERNO: Repetimos el proceso de derivación exactamente igual
-                    byte[] keyMaterial = Rfc2898DeriveBytes.Pbkdf2(
-                        Encoding.UTF8.GetBytes(EncryptionKey),
-                        Salt,
-                        100000,
-                        HashAlgorithmName.SHA256,
-                        48
-                    );
+                
+                using Aes aes = Aes.Create();
+                aes.Key = CryptoKeys.Key; // 👈 Consumimos desde la tupla en memoria
+                aes.IV = CryptoKeys.IV;   // 👈 Consumimos desde la tupla en memoria
 
-                    encryptor.Key = keyMaterial[0..32];
-                    encryptor.IV = keyMaterial[32..48];
-                    
-                    using (MemoryStream ms = new MemoryStream())
-                    {
-                        using (CryptoStream cs = new CryptoStream(ms, encryptor.CreateDecryptor(), CryptoStreamMode.Write))
-                        {
-                            cs.Write(cipherBytes, 0, cipherBytes.Length);
-                            cs.Close();
-                        }
-                        cipherText = Encoding.Unicode.GetString(ms.ToArray());
-                    }
-                }
-                return cipherText;
+                using MemoryStream ms = new MemoryStream();
+                using CryptoStream cs = new CryptoStream(ms, aes.CreateDecryptor(), CryptoStreamMode.Write);
+                
+                cs.Write(cipherBytes, 0, cipherBytes.Length);
+                cs.FlushFinalBlock();
+                
+                return Encoding.UTF8.GetString(ms.ToArray()); 
             }
             catch 
             {

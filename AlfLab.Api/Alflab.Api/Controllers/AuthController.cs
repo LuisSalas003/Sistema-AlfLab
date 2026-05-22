@@ -36,7 +36,7 @@ namespace AlfLab.Api.Controllers
         }
 
         [HttpPost("registrar")]
-        [Authorize] 
+        [Authorize (Roles = "Admin")] 
         public async Task<IActionResult> Registrar([FromBody] RegistroUsuarioRequestDto request)
         {
             // =========================================================
@@ -72,24 +72,24 @@ namespace AlfLab.Api.Controllers
                 NombreCompleto = request.NombreCompleto,
                 Correo = request.Correo,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
-                Rol = "Ventas" 
+                Rol = request.Rol
             };
 
             await _usuarioRepository.AgregarAsync(nuevoUsuario);
             return Ok(new { mensaje = "Usuario registrado exitosamente." });
         }
 
-        [HttpPost("login")]
+       [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
         {
-            // EF Core intercepta 'request.Correo' y lo busca usando su equivalencia encriptada en la BD
             var usuario = await _usuarioRepository.ObtenerPorCorreoAsync(request.Correo);
             if (usuario == null)
                 return Unauthorized(new { mensaje = "Credenciales incorrectas." });
 
+            // 1. SI LA CUENTA YA ESTÁ BLOQUEADA (Retornamos 429 en lugar de 401)
             if (usuario.BloqueadoHasta.HasValue && usuario.BloqueadoHasta.Value > DateTime.Now)
             {
-                return Unauthorized(new { mensaje = "Cuenta bloqueada temporalmente." });
+                return StatusCode(StatusCodes.Status429TooManyRequests, new { mensaje = "Cuenta bloqueada temporalmente por múltiples intentos fallidos." });
             }
 
             bool passwordValido = BCrypt.Net.BCrypt.Verify(request.Password, usuario.PasswordHash);
@@ -106,16 +106,23 @@ namespace AlfLab.Api.Controllers
                 };
                 await _auditoriaRepository.GuardarAtaqueAsync(ataque);
 
+                // 2. SI EN ESTE INTENTO LLEGÓ AL LÍMITE (Bloqueamos y retornamos 429)
                 if (usuario.IntentosFallidos >= 5)
                 {
                     usuario.BloqueadoHasta = DateTime.Now.AddMinutes(1);
                     _logger.LogCritical("🚨 SEGURIDAD: Usuario {Correo} bloqueado.", request.Correo);
+                    
+                    await _usuarioRepository.ActualizarAsync(usuario); 
+                    
+                    return StatusCode(StatusCodes.Status429TooManyRequests, new { mensaje = "Límite de intentos excedido. Cuenta bloqueada temporalmente." });
                 }
 
+                // 3. SI FALLÓ PERO AÚN TIENE INTENTOS (Retornamos 401 normal)
                 await _usuarioRepository.ActualizarAsync(usuario); 
                 return Unauthorized(new { mensaje = "Credenciales incorrectas." });
             }
 
+            // --- LOGIN EXITOSO ---
             usuario.IntentosFallidos = 0;
             usuario.BloqueadoHasta = null;
 
@@ -128,7 +135,6 @@ namespace AlfLab.Api.Controllers
 
             return Ok(new { token = token, refreshToken = refreshToken });
         }
-
         private string GenerarJwtToken(Usuario usuario)
         {
             var keyInfo = Environment.GetEnvironmentVariable("JWT_SECRET") ?? "EstaEsUnaLlaveDeRespaldoPorSiFallaElEnv123!";
@@ -140,7 +146,7 @@ namespace AlfLab.Api.Controllers
             {
                 new Claim(JwtRegisteredClaimNames.Sub, usuario.Correo),
                 new Claim("id", usuario.Id.ToString()),
-                new Claim("rol", usuario.Rol)
+                new Claim(ClaimTypes.Role, usuario.Rol)
             };
 
             var token = new JwtSecurityToken(

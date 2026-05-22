@@ -14,5 +14,6 @@ namespace AlfLab.Api.Application.dtos.requests // Tu namespace
         [Required(ErrorMessage = "La contraseña es obligatoria.")]
         [MinLength(8, ErrorMessage = "La contraseña debe tener al menos 8 caracteres por seguridad.")]
         public required string Password { get; set; }
+        public string Rol { get; set; } = "Ventas"; // Valor por defecto para el rol
     }
 }

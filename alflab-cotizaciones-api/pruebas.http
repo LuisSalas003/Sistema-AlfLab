@@ -1,5 +1,5 @@
 @HostAddress = http://localhost:3001
-@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBhbGZsYWIuY29tIiwiaWQiOiI3Iiwicm9sIjoiVmVudGFzIiwiZXhwIjoxNzc5MDcxMjY5LCJpc3MiOiJBbGZMYWJBcGkiLCJhdWQiOiJBbGZMYWJGcm9udGVuZCJ9.HiAfGgQXeRFrgjL9bKKnTegYXs6curbcMiAckFo6Kgk
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBhbGZsYWIuY29tIiwiaWQiOiI0Iiwicm9sIjoiVmVudGFzIiwiZXhwIjoxNzc5NDI1NDkzLCJpc3MiOiJBbGZMYWJBcGkiLCJhdWQiOiJBbGZMYWJGcm9udGVuZCJ9.nZFaa7xxlwesPz8lTpodLKp4hM17GGMV5ysyGt9RPDQ
 ### =========================================================
 ### PREPARACIÓN DE DATOS ANTES DE QUE LLEGUE EL MAESTRO
 ### =========================================================
@@ -101,3 +101,19 @@ Content-Type: application/pdf
 
 < ./cotizacion_001.pdf
 --boundary-test--
+
+
+### ====================================================================
+### PRUEBA DE SEGURIDAD INTERNACIONAL: SUBIDA DE MALWARE (ESTÁNDAR EICAR)
+### Objetivo: Validar que el backend identifique y bloquee un payload de virus estandarizado.
+### ====================================================================
+
+POST http://localhost:3001/api/archivos/subir
+Content-Type: multipart/form-data; boundary=FormularioEicar
+
+--FormularioEicar
+Content-Disposition: form-data; name="archivo"; filename="evidencia_test.pdf"
+Content-Type: application/x-msdownload
+
+< ./script_peligroso.exe
+--FormularioEicar--
