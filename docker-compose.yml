@@ -12,7 +12,8 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_MASTER_ROOT_PASSWORD:-Root_Profe_2026}
     ports:
-      - "3309:3306"
+      # Toma el PORT_DB_MASTER (3306) del .env y lo conecta al 3306 interno
+      - "${PORT_DB_MASTER}:3306"
     volumes:
       - ./data/mysql_master:/var/lib/mysql
       - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -29,7 +30,8 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-Root_Profe_2026}
     ports:
-      - "3307:3306"
+      # Toma el PORT_DB_REPLICA (3309) del .env y lo conecta al 3306 interno
+      - "${PORT_DB_REPLICA}:3306"
     volumes:
       - ./data/mysql_replica:/var/lib/mysql
       - ./scripts/replica-init.sql:/docker-entrypoint-initdb.d/replica-init.sql
@@ -45,7 +47,8 @@ services:
     env_file: 
       - .env
     ports:
-      - "3001:3001"
+      # Toma el PORT_API (3000) del .env y lo conecta al 3001 interno de NestJS
+      - "${PORT_API}:3001"
     environment:
       - DB_HOST=db-master
       - DB_PORT=3306
@@ -58,7 +61,6 @@ services:
       - db-master
     networks:
       - alflab-network
-    # 👇 ESTA ES LA MODIFICACIÓN: VOLUMEN PARA LOS ARCHIVOS DE NESTJS
     volumes:
       - ./data/uploads_nest:/app/uploads 
 
@@ -74,7 +76,8 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root}
     ports:
-      - "3308:3306"
+      # Toma el PORT_DB_DOTNET (que agregaremos al .env) y lo conecta al 3306 interno
+      - "${PORT_DB_DOTNET}:3306"
     volumes:
       - ./data/mysql_dotnet:/var/lib/mysql
       - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -89,7 +92,8 @@ services:
     env_file: 
       - .env
     ports:
-      - "5000:80"
+      # Toma el PORT_DOTNET_API (5000) del .env y lo conecta al 80 interno de Kestrel/.NET
+      - "${PORT_DOTNET_API}:80"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Server=db-alflab-dotnet;Database=alflab_principal;Uid=root;Pwd=${DB_PASSWORD:-SuperPasswordPro_2026};

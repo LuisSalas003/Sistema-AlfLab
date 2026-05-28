@@ -23,8 +23,8 @@ POST {{HostAddress}}/api/auth/login
 Content-Type: application/json
 
 {
-  "correo": "admin1@alflab.com",
-  "password": "TuPasswordReal123!" 
+  "correo": "admin@alflab.com",
+  "password": "TuPasswordReal123" 
 }
 
 ###

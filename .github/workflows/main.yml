@@ -2,27 +2,34 @@ name: AlfLab Main Pipeline
 
 on:
   push:
-    branches: [ "main" ] # Se activa automáticamente al hacer push a la rama main
+    branches: [ "main" ] 
   pull_request:
     branches: [ "main" ]
 
+# 🌐 VARIABLES GLOBALES (Leídas desde la interfaz de GitHub)
+env:
+  APP_NAME: ${{ vars.APP_NAME }}
+  DOTNET_VERSION: ${{ vars.DOTNET_VERSION }}
+
 jobs:
   # =========================================================
-  # 👈 FASE 3: ASOCIACIÓN DEL CONTENEDOR 1 (NestJS)
+  # 📦 FASE 3: ASOCIACIÓN DEL CONTENEDOR 1 (NestJS)
   # =========================================================
   api-cotizaciones-nestjs:
-    uses: ./.github/workflows/reusable-build.yml # Llama al molde reutilizable
+    uses: ./.github/workflows/reusable-build.yml 
     with:
       service_name: "AlfLab-Cotizaciones-NestJS"
       dockerfile_path: "./alflab-cotizaciones-api/Dockerfile"
       context_path: "./alflab-cotizaciones-api"
+    secrets: inherit # 👈 CLAVE DE SEGURIDAD: Hereda los Action Secrets al molde
 
   # =========================================================
-  # 👈 FASE 3: ASOCIACIÓN DEL CONTENEDOR 2 (.NET)
+  # 📦 FASE 3: ASOCIACIÓN DEL CONTENEDOR 2 (.NET)
   # =========================================================
   api-principal-dotnet:
-    uses: ./.github/workflows/reusable-build.yml # Llama al mismo molde reutilizable
+    uses: ./.github/workflows/reusable-build.yml 
     with:
       service_name: "AlfLab-Principal-DotNet"
-      dockerfile_path: "./Dockerfile" # Si tu Dockerfile de .NET está en la raíz
-      context_path: "."
+      dockerfile_path: "./AlfLab.Api/Dockerfile" # (Ajustado a tu estructura real)
+      context_path: "./AlfLab.Api"
+    secrets: inherit # 👈 CLAVE DE SEGURIDAD: Hereda los Action Secrets al molde

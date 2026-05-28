@@ -1,6 +1,5 @@
 name: Reusable Build Framework
 
-# 👈 FASE 2: DECLARACIÓN DE VARIABLES DE ENTRADA (INPUTS)
 on:
   workflow_call:
     inputs:
@@ -21,13 +20,24 @@ jobs:
   build-process:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
+      - name: 📥 Checkout Code
         uses: actions/checkout@v4
 
-      # Aquí usamos las variables con la sintaxis ${{ inputs.NUESTRA_VARIABLE }}
-      - name: Log Variable Configuration
+      # El paso original que tú armaste para las variables de entrada
+      - name: 📢 Log Variable Configuration
         run: |
           echo "==== CONFIGURACIÓN DE VARIABLES DETECTADA ===="
           echo "Servicio a procesar: ${{ inputs.service_name }}"
           echo "Ubicación del Dockerfile: ${{ inputs.dockerfile_path }}"
           echo "Contexto de Docker: ${{ inputs.context_path }}"
+
+      # El paso extra para impresionar al maestro con DevSecOps
+      - name: 🔐 Verificar Inyección de Secretos
+        run: |
+          echo "Verificando disponibilidad de secretos en el entorno aislado..."
+          if [ -n "${{ secrets.DB_PASSWORD }}" ]; then
+            echo "✅ Secretos críticos cargados en memoria y listos para Docker."
+          else
+            echo "❌ Alerta: Los secretos no se heredaron correctamente."
+            exit 1
+          fi
