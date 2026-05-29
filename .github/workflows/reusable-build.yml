@@ -23,7 +23,6 @@ jobs:
       - name: 📥 Checkout Code
         uses: actions/checkout@v4
 
-      # El paso original que tú armaste para las variables de entrada
       - name: 📢 Log Variable Configuration
         run: |
           echo "==== CONFIGURACIÓN DE VARIABLES DETECTADA ===="
@@ -31,7 +30,6 @@ jobs:
           echo "Ubicación del Dockerfile: ${{ inputs.dockerfile_path }}"
           echo "Contexto de Docker: ${{ inputs.context_path }}"
 
-      # El paso extra para impresionar al maestro con DevSecOps
       - name: 🔐 Verificar Inyección de Secretos
         run: |
           echo "Verificando disponibilidad de secretos en el entorno aislado..."
@@ -43,28 +41,32 @@ jobs:
           fi
 
       # =========================================================
-      # 📝 MANIPULACIÓN DINÁMICA DE APPSETTINGS (Requisito de clase)
+      # 📝 MANIPULACIÓN DINÁMICA DE APPSETTINGS
       # =========================================================
       - name: ⚙️ Reemplazar appsettings (Solo para proyectos .NET)
         shell: pwsh
         run: |
-          # 1. Usamos la variable de entrada para buscar en la carpeta correcta
           $rutaJson = "${{ inputs.context_path }}/appsettings.json"
           
-          # 2. Verificamos si el archivo existe antes de intentar abrirlo
           if (Test-Path $rutaJson) {
               echo "🔄 Archivo appsettings.json detectado. Inyectando secretos..."
-              
-              # Leer y convertir el JSON
               $json = Get-Content $rutaJson | ConvertFrom-Json
-              
-              # Reemplazar la cadena de conexión usando el secreto heredado
               $json.ConnectionStrings.DefaultConnection = "Server=db-alflab-dotnet;Database=alflab_principal;Uid=root;Pwd=${{ secrets.DB_PASSWORD }};"
-              
-              # Guardar los cambios sobrescribiendo el archivo
               $json | ConvertTo-Json -Depth 10 | Set-Content $rutaJson
-              
               echo "✅ Variables de entorno inyectadas correctamente en el JSON."
           } else {
               echo "⏭️ No es un proyecto .NET (o no hay appsettings.json). Omitiendo este paso."
           }
+
+      # =========================================================
+      # 🐳 FASE 4: VALIDACIÓN DE CONSTRUCCIÓN LOCAL (Sin subida)
+      # =========================================================
+      - name: 🔨 Probar Construcción del Contenedor
+        shell: bash
+        run: |
+          echo "🚀 Comprobando que el contenedor compila correctamente..."
+          
+          # Construimos la imagen usando tus variables dinámicas
+          docker build -t test-${{ inputs.service_name }} -f ${{ inputs.dockerfile_path }} ${{ inputs.context_path }}
+          
+          echo "✅ El contenedor se construyó sin errores. ¡El código es estable!"
