@@ -1,6 +1,6 @@
 using AlfLab.Api.Domain.Entities;
 using System.Threading.Tasks;
-// Prueba de pipeline independiente
+// Prueba de pipeline
 namespace AlfLab.Api.Application.Interfaces
 {
     public interface IAuditoriaRepository
