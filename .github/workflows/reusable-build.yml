@@ -41,3 +41,30 @@ jobs:
             echo "❌ Alerta: Los secretos no se heredaron correctamente."
             exit 1
           fi
+
+      # =========================================================
+      # 📝 MANIPULACIÓN DINÁMICA DE APPSETTINGS (Requisito de clase)
+      # =========================================================
+      - name: ⚙️ Reemplazar appsettings (Solo para proyectos .NET)
+        shell: pwsh
+        run: |
+          # 1. Usamos la variable de entrada para buscar en la carpeta correcta
+          $rutaJson = "${{ inputs.context_path }}/appsettings.json"
+          
+          # 2. Verificamos si el archivo existe antes de intentar abrirlo
+          if (Test-Path $rutaJson) {
+              echo "🔄 Archivo appsettings.json detectado. Inyectando secretos..."
+              
+              # Leer y convertir el JSON
+              $json = Get-Content $rutaJson | ConvertFrom-Json
+              
+              # Reemplazar la cadena de conexión usando el secreto heredado
+              $json.ConnectionStrings.DefaultConnection = "Server=db-alflab-dotnet;Database=alflab_principal;Uid=root;Pwd=${{ secrets.DB_PASSWORD }};"
+              
+              # Guardar los cambios sobrescribiendo el archivo
+              $json | ConvertTo-Json -Depth 10 | Set-Content $rutaJson
+              
+              echo "✅ Variables de entorno inyectadas correctamente en el JSON."
+          } else {
+              echo "⏭️ No es un proyecto .NET (o no hay appsettings.json). Omitiendo este paso."
+          }

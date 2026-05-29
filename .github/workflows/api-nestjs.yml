@@ -1,0 +1,16 @@
+name: API Cotizaciones (NestJS)
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'alflab-cotizaciones-api/**'
+
+jobs:
+  build-nestjs:
+    uses: ./.github/workflows/reusable-build.yml 
+    with:
+      service_name: "AlfLab-Cotizaciones-NestJS"
+      dockerfile_path: "./alflab-cotizaciones-api/Dockerfile"
+      context_path: "./alflab-cotizaciones-api"
+    secrets: inherit

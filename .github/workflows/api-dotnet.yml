@@ -1,0 +1,16 @@
+name: API Principal (.NET)
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'AlfLab.Api/**'
+
+jobs:
+  build-dotnet:
+    uses: ./.github/workflows/reusable-build.yml 
+    with:
+      service_name: "AlfLab-Principal-DotNet"
+      dockerfile_path: "./AlfLab.Api/Dockerfile"
+      context_path: "./AlfLab.Api"
+    secrets: inherit
