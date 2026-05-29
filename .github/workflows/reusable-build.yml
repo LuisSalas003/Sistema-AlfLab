@@ -36,9 +36,9 @@ jobs:
       - name: 📋 Imprimir Variables del Repositorio
         run: |
           echo "==== VARIABLES GLOBALES DE GITHUB ===="
-          echo "Nombre de la Aplicación: ${{ vars.APP_NAME }}"
-          # Si también creaste la variable de descripción, descomenta la siguiente línea:
-          # echo "Descripción: ${{ vars.PROYECT_DESCRIPTION }}"
+          echo "Host de Base de Datos: ${{ vars.DB_HOST }}"
+          echo "Puerto de la API: ${{ vars.PORT_API }}"
+          echo "Base de Datos Master: ${{ vars.DB_MASTER_DATABASE }}"
 
       - name: 🔐 Verificar Inyección de Secretos
         run: |
