@@ -30,6 +30,16 @@ jobs:
           echo "Ubicación del Dockerfile: ${{ inputs.dockerfile_path }}"
           echo "Contexto de Docker: ${{ inputs.context_path }}"
 
+      # =========================================================
+      # 📢 IMPRESIÓN DE VARIABLES GLOBALES (Requisito de clase)
+      # =========================================================
+      - name: 📋 Imprimir Variables del Repositorio
+        run: |
+          echo "==== VARIABLES GLOBALES DE GITHUB ===="
+          echo "Nombre de la Aplicación: ${{ vars.APP_NAME }}"
+          # Si también creaste la variable de descripción, descomenta la siguiente línea:
+          # echo "Descripción: ${{ vars.PROYECT_DESCRIPTION }}"
+
       - name: 🔐 Verificar Inyección de Secretos
         run: |
           echo "Verificando disponibilidad de secretos en el entorno aislado..."
