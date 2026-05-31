@@ -15,7 +15,9 @@ using AlfLab.Api.Middlewares;
 using Microsoft.AspNetCore.RateLimiting;
 using DotNetEnv;
 
-// --- 🚀 PROGRAMA PRINCIPAL DE LA API DE ALFLAB ---
+//Comentario para compilar el workflow de GitHub Actions Api .Net
+
+// --- PROGRAMA PRINCIPAL DE LA API DE ALFLAB ---
 var builder = WebApplication.CreateBuilder(args);
 
 // --- 1. CARGA DE VARIABLES Y ENTORNOS ---
@@ -36,7 +38,7 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseMySql(connectionString, new MySqlServerVersion(new Version(8, 0, 30)),
-        // 👇 ESTA ES LA LÍNEA QUE REPARA EL ERROR DE LAS MIGRACIONES
+        // ESTA ES LA LÍNEA QUE REPARA EL ERROR DE LAS MIGRACIONES
         b => b.MigrationsAssembly("Alflab.Api")) 
 );
 
@@ -67,7 +69,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(keyBytes)
         };
 
-        // 👇 VALIDACIÓN ANTI-CLONACIÓN RESTAURADA
         options.Events = new JwtBearerEvents
         {
             OnTokenValidated = context =>
@@ -141,7 +142,6 @@ using (var scope = app.Services.CreateScope())
         // 1. Ejecuta las migraciones existentes del proyecto
         await context.Database.MigrateAsync(); 
 
-        // 2. 👇 ASEGURAR TABLA DE AUDITORÍA AUTOMÁTICA
         // Si la tabla no existe en MySQL, este script la crea al vuelo inmediatamente
         var sqlAuditoria = @"
             CREATE TABLE IF NOT EXISTS RegistrosAuditoria (

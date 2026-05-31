@@ -3,13 +3,15 @@ import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 
+//Comentario para compilar el workflow de GitHub Actions Api NestJS
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Set global API prefix
   app.setGlobalPrefix('api');
 
-  // 👇 Enable global validation (AHORA EN MODO ESTRICTO)
+  //Enable global validation (AHORA EN MODO ESTRICTO)
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true, // Limpia silenciosamente cualquier campo que no esté definido en tu DTO
     forbidNonWhitelisted: true, // Si mandan un campo extra o basura, bloquea toda la petición con un error 400

@@ -20,66 +20,78 @@ jobs:
   build-process:
     runs-on: ubuntu-latest
     steps:
-      - name: 📥 Checkout Code
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: 📢 Log Variable Configuration
+      - name: Log Variable Configuration
         run: |
-          echo "==== CONFIGURACIÓN DE VARIABLES DETECTADA ===="
+          echo "Configuracion de variables detectada"
           echo "Servicio a procesar: ${{ inputs.service_name }}"
-          echo "Ubicación del Dockerfile: ${{ inputs.dockerfile_path }}"
+          echo "Ubicacion del Dockerfile: ${{ inputs.dockerfile_path }}"
           echo "Contexto de Docker: ${{ inputs.context_path }}"
 
-      # =========================================================
-      # 📢 IMPRESIÓN DE VARIABLES GLOBALES (Requisito de clase)
-      # =========================================================
-      - name: 📋 Imprimir Variables del Repositorio
+      # Impresion de variables globales de entorno
+      - name: Imprimir Variables del Repositorio
         run: |
-          echo "==== VARIABLES GLOBALES DE GITHUB ===="
+          echo "Variables globales de GitHub:"
           echo "Host de Base de Datos: ${{ vars.DB_HOST }}"
           echo "Puerto de la API: ${{ vars.PORT_API }}"
           echo "Base de Datos Master: ${{ vars.DB_MASTER_DATABASE }}"
 
-      - name: 🔐 Verificar Inyección de Secretos
+      - name: Verificar Inyeccion de Secretos
         run: |
           echo "Verificando disponibilidad de secretos en el entorno aislado..."
           if [ -n "${{ secrets.DB_PASSWORD }}" ]; then
-            echo "✅ Secretos críticos cargados en memoria y listos para Docker."
+            echo "Secretos criticos cargados en memoria y listos para Docker."
           else
-            echo "❌ Alerta: Los secretos no se heredaron correctamente."
+            echo "Alerta: Los secretos no se heredaron correctamente."
             exit 1
           fi
 
-      # =========================================================
-      # 📝 MANIPULACIÓN DINÁMICA DE APPSETTINGS
-      # =========================================================
-      - name: ⚙️ Reemplazar appsettings (Solo para proyectos .NET)
+      # Manipulacion dinamica de appsettings.json
+      - name: Reemplazar appsettings para proyectos .NET
         shell: pwsh
         run: |
           $rutaJson = "${{ inputs.context_path }}/appsettings.json"
           
           if (Test-Path $rutaJson) {
-              echo "🔄 Archivo appsettings.json detectado. Inyectando secretos..."
+              echo "Archivo appsettings.json detectado. Inyectando secretos..."
               $json = Get-Content $rutaJson | ConvertFrom-Json
               $json.ConnectionStrings.DefaultConnection = "Server=db-alflab-dotnet;Database=alflab_principal;Uid=root;Pwd=${{ secrets.DB_PASSWORD }};"
               $json | ConvertTo-Json -Depth 10 | Set-Content $rutaJson
-              echo "✅ Variables de entorno inyectadas correctamente en el JSON."
+              echo "Variables de entorno inyectadas correctamente en el JSON."
           } else {
-              echo "⏭️ No es un proyecto .NET (o no hay appsettings.json). Omitiendo este paso."
+              echo "No es un proyecto .NET o no existe appsettings.json. Omitiendo este paso."
           }
 
-      # =========================================================
-      # 🐳 FASE 4: VALIDACIÓN DE CONSTRUCCIÓN LOCAL (Sin subida)
-      # =========================================================
-      - name: 🔨 Probar Construcción del Contenedor
+      # Fase de validacion de construccion local
+      - name: Probar Construccion del Contenedor
         shell: bash
         run: |
-          echo "🚀 Comprobando que el contenedor compila correctamente..."
+          echo "Comprobando que el contenedor compila correctamente..."
           
-          # 1. Convertimos el nombre a minúsculas para que Docker no se queje
+          # Convertir el nombre a minusculas para cumplir con las reglas de Docker
           SERVICE_LOWER=$(echo "${{ inputs.service_name }}" | tr '[:upper:]' '[:lower:]')
           
-          # 2. Construimos la imagen usando la nueva variable en minúsculas
+          # Construir la imagen usando la nueva variable en minusculas
           docker build -t test-$SERVICE_LOWER -f ${{ inputs.dockerfile_path }} ${{ inputs.context_path }}
           
-          echo "✅ El contenedor se construyó sin errores. ¡El código es estable!"
+          echo "El contenedor se construyo sin errores. El codigo es estable."
+
+      # Fase de empaquetado y exportacion de artefactos
+      - name: Exportar Imagen a Archivo TAR
+        shell: bash
+        run: |
+          SERVICE_LOWER=$(echo "${{ inputs.service_name }}" | tr '[:upper:]' '[:lower:]')
+          echo "Empaquetando la imagen $SERVICE_LOWER para su almacenamiento..."
+          
+          # El comando 'docker save' convierte el contenedor en un archivo fisico
+          docker save test-$SERVICE_LOWER > docker-image.tar
+
+      - name: Subir Artifact a GitHub
+        uses: actions/upload-artifact@v4
+        with:
+          # Nombrar el archivo dinamicamente segun el API que se este construyendo
+          name: Imagen-Docker-${{ inputs.service_name }}
+          path: docker-image.tar
+          retention-days: 5
