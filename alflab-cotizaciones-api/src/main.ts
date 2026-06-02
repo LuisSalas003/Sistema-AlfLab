@@ -3,7 +3,7 @@ import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 
-//Comentario para compilar el workflow de GitHub Actions Api NestJS
+//Comentario para compilar el workflow de GitHub Actions Api NestJS 
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
