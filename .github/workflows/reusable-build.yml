@@ -24,8 +24,9 @@ jobs:
       contents: read
       packages: write
       
+    # ¡Aquí está la corrección con las comillas!
     env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
       
     steps:
       - name: Checkout Code
@@ -87,7 +88,6 @@ jobs:
           IMAGE_ID="ghcr.io/$OWNER_LOWER/$SERVICE_LOWER"
           
           echo "Paso 1: Construyendo imagen localmente y capturando bitacora..."
-          # El comando 'tee' permite ver el log en pantalla y al mismo tiempo guardarlo en un archivo txt
           docker build -t $IMAGE_ID:latest -f ${{ inputs.dockerfile_path }} ${{ inputs.context_path }} 2>&1 | tee bitacora_construccion.txt
           
           echo "Paso 2: Subiendo imagen a GitHub Packages (ghcr.io)"

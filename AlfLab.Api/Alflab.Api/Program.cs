@@ -15,7 +15,7 @@ using AlfLab.Api.Middlewares;
 using Microsoft.AspNetCore.RateLimiting;
 using DotNetEnv;
 
-//Comentario para compilar el workflow de GitHub Actions Api .Net 
+//Comentario para compilar el workflow de GitHub Actions Api .Net
 
 // --- PROGRAMA PRINCIPAL DE LA API DE ALFLAB ---
 var builder = WebApplication.CreateBuilder(args);
