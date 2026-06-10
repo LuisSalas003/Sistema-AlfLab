@@ -1,5 +1,6 @@
-@HostAddress = http://localhost:3001
-@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBhbGZsYWIuY29tIiwiaWQiOiI0Iiwicm9sIjoiVmVudGFzIiwiZXhwIjoxNzc5NDI1NDkzLCJpc3MiOiJBbGZMYWJBcGkiLCJhdWQiOiJBbGZMYWJGcm9udGVuZCJ9.nZFaa7xxlwesPz8lTpodLKp4hM17GGMV5ysyGt9RPDQ
+@HostAddress = http://localhost:3000
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBhbGZsYWIuY29tIiwiaWQiOiIxIiwiaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcy9yb2xlIjoiQWRtaW4iLCJleHAiOjE3ODEwNjYyNzgsImlzcyI6IkFsZkxhYkFwaSIsImF1ZCI6IkFsZkxhYkZyb250ZW5kIn0.ZeRw-xwSPOdyW5_urSHeElBNPBBpzsZQS-vaGKn2o10
+
 ### =========================================================
 ### PREPARACIÓN DE DATOS ANTES DE QUE LLEGUE EL MAESTRO
 ### =========================================================
@@ -10,12 +11,20 @@ Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "clienteId": "EMP-998",
-  "descripcion": "Cotización de Mantenimiento cambio de estado a Aceptada",
-  "total": 15,
-  "productos": [
-    { "nombre": "Mantenimiento Preventivo", "cantidad": 1, "precio": 15000 }
-  ]
+  "clienteId": "EMP-999",
+  "concepto": "Cotización de Mantenimiento cambio de estado a Aceptada",
+  "total": 15000
+}
+
+### (Segundo dummy de preparación)
+POST {{HostAddress}}/api/cotizaciones
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "clienteId": "EMP-888",
+  "concepto": "Cotización de Instalación de Red",
+  "total": 12500
 }
 
 ### =========================================================
@@ -24,6 +33,7 @@ Content-Type: application/json
 # Demuestra que la réplica te devuelve los datos sincronizados.
 GET {{HostAddress}}/api/cotizaciones
 Authorization: Bearer {{token}}
+
 
 ### =========================================================
 ### PASO 2 Y 3: INSERTAR EN EL MAESTRO
@@ -36,12 +46,10 @@ Content-Type: application/json
 
 {
   "clienteId": "CL-NUEVO",
-  "descripcion": "Cotización Urgente con Réplica Caída",
-  "total": 8500,
-  "productos": [
-    { "nombre": "Servicio de Emergencia", "cantidad": 1, "precio": 8500 }
-  ]
+  "concepto": "Cotización Urgente con Réplica Caída",
+  "total": 8500
 }
+
 
 ### =========================================================
 ### PASO 5.D: VULNERABILIDAD CMD INJECTION
@@ -53,15 +61,14 @@ Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "clienteId": "HACKER-01",
-  "descripcion": "Intento de borrado de compilación",
-  "total": 500,
-  "productos": [
-    { "nombre": "Reactivos; rm -rf /app/dist", "cantidad": 1, "precio": 500 }
-  ]
+  "clienteId": "HACKER-02",
+  "concepto": "Intento de borrado; rm -rf /app/dist",
+  "total": 500
 }
+
+
 ### =========================================================
-### PRUEBA DE SEGURIDAD: SQL INJECTION EN CAMPO NUMÉRICO
+### PRUEBA DE SEGURIDAD: SQL INJECTION 
 ### =========================================================
 POST {{HostAddress}}/api/cotizaciones
 Authorization: Bearer {{token}}
@@ -69,30 +76,30 @@ Content-Type: application/json
 
 {
   "clienteId": "CLIENTE-99",
-  "descripcion": "Intento de SQLi",
-  "total": "999.00; DROP TABLE usuarios; --", 
-  "productos": [
-    { "nombre": "Producto Trampa", "cantidad": 1, "precio": 999 }
-  ]
+  "concepto": "Intento de SQLi; DROP TABLE usuarios; --",
+  "total": 999
 }
+
+
 ### =========================================================
 ### PRUEBA DE ESTRUCTURA: DATOS INVÁLIDOS
 ### =========================================================
+# Demuestra que el DTO bloquea textos vacíos y números negativos
 POST {{HostAddress}}/api/cotizaciones
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
   "clienteId": "",
-  "descripcion": "A",
-  "total": -500,
-  "productos": []
+  "concepto": "A",
+  "total": -500
 }
+
 
 ### =========================================================
 ### PASO 7: DEMOSTRAR MANEJO DE ARCHIVOS EN NESTJS
 ### =========================================================
-POST http://localhost:3001/archivos/subir
+POST {{HostAddress}}/api/archivos/subir
 Content-Type: multipart/form-data; boundary=boundary-test
 
 --boundary-test
@@ -104,16 +111,15 @@ Content-Type: application/pdf
 
 
 ### ====================================================================
-### PRUEBA DE SEGURIDAD INTERNACIONAL: SUBIDA DE MALWARE (ESTÁNDAR EICAR)
-### Objetivo: Validar que el backend identifique y bloquee un payload de virus estandarizado.
+### PRUEBA DE SEGURIDAD AVANZADA: BYPASS DE EXTENSIÓN CON MALWARE OCULTO
+### Objetivo: Demostrar que el sistema lee el contenido real y no se fía de la extensión .pdf
 ### ====================================================================
+POST {{HostAddress}}/api/archivos/subir
+Content-Type: multipart/form-data; boundary=AtaqueTroyano
 
-POST http://localhost:3001/api/archivos/subir
-Content-Type: multipart/form-data; boundary=FormularioEicar
+--AtaqueTroyano
+Content-Disposition: form-data; name="archivo"; filename="cotizacion_infectada.pdf"
+Content-Type: application/pdf
 
---FormularioEicar
-Content-Disposition: form-data; name="archivo"; filename="evidencia_test.pdf"
-Content-Type: application/x-msdownload
-
-< ./script_peligroso.exe
---FormularioEicar--
+< ./cotizacion_infectada.pdf
+--AtaqueTroyano--

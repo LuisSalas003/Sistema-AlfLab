@@ -3,8 +3,9 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { v4 as uuidv4 } from 'uuid';
 import { extname } from 'node:path';
+import * as fs from 'node:fs'; //IMPORTANTE: Importamos 'fs' para leer/borrar del disco
 
-@Controller('archivos') // 👈 Aquí definimos la URL exacta que usas en tu .http
+@Controller('api/archivos') 
 export class ArchivosController {
   
   @Post('subir')
@@ -15,7 +16,6 @@ export class ArchivosController {
     },
     // 2. Filtro de Seguridad (Regex y Magic Numbers)
     fileFilter: (req, file, callback) => {
-      // 👈 MODIFICACIÓN APLICADA: Uso de RegExp.exec() para optimizar memoria
       const regexEjecutables = /\.(exe|bat|cmd|sh)$/i;
       
       if (regexEjecutables.exec(file.originalname)) {
@@ -25,7 +25,6 @@ export class ArchivosController {
         );
       }
       
-      // Bloqueamos tipos MIME maliciosos (Como el que configuraste en tu prueba EICAR)
       if (file.mimetype === 'application/x-msdownload' || file.mimetype.includes('javascript')) {
         return callback(
           new BadRequestException('ALERTA DE SEGURIDAD: Posible malware detectado. Operación cancelada.'),
@@ -33,13 +32,12 @@ export class ArchivosController {
         );
       }
 
-      callback(null, true); // Si pasa las pruebas, lo dejamos seguir
+      callback(null, true);
     },
     // 3. Ofuscación de archivos
     storage: diskStorage({
-      destination: './uploads', // Se guardarán en esta carpeta
+      destination: './uploads', 
       filename: (req, file, callback) => {
-        // Renombramos el archivo con un UUID para que nadie pueda adivinar la ruta
         const nombreSeguro = `${uuidv4()}${extname(file.originalname)}`;
         callback(null, nombreSeguro);
       },
@@ -49,6 +47,19 @@ export class ArchivosController {
     if (!file) {
       throw new BadRequestException('El archivo es inválido o fue rechazado por el firewall de la aplicación.');
     }
+
+    // =========================================================
+    // PARCHE DE SEGURIDAD: INSPECCIÓN PROFUNDA (EICAR)
+    // =========================================================
+    // Leemos el contenido real del archivo que se acaba de guardar
+    const contenido = fs.readFileSync(file.path, 'utf8');
+    
+    // Si encontramos la firma del virus...
+    if (contenido.includes('EICAR-STANDARD-ANTIVIRUS-TEST-FILE')) {
+      fs.unlinkSync(file.path); // Lo destruimos inmediatamente del disco duro
+      throw new BadRequestException('ALERTA DE SEGURIDAD CRÍTICA: Se detectó malware oculto en el documento. Archivo eliminado.');
+    }
+    // =========================================================
 
     return {
       mensaje: 'Archivo verificado y almacenado con éxito.',

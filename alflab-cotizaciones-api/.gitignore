@@ -54,3 +54,17 @@ pids
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# ====================================================================
+# 🛡️ ARCHIVOS DE PRUEBA, SEGURIDAD Y CARGAS DEL SISTEMA (ALFLAB)
+# ====================================================================
+# Ignorar la carpeta donde se guardan los archivos subidos dinámicamente
+/uploads
+
+# Ignorar los archivos de prueba de inyección y bypass
+cotizacion_*.pdf
+script_peligroso.exe
+
+# Ignorar cualquier otro binario o ejecutable por seguridad en el repo
+*.exe
+*.dll
